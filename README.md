@@ -151,7 +151,7 @@ The current alpha release is also available as wheel and source artifacts on
 GitHub:
 
 ```bash
-python -m pip install https://github.com/vecadvisor/vecadvisor/releases/download/v0.1.0a1/vecadvisor-0.1.0a1-py3-none-any.whl
+python -m pip install https://github.com/vecadvisor/vecadvisor/releases/download/v0.1.0a2/vecadvisor-0.1.0a2-py3-none-any.whl
 ```
 
 The CLI entry point is:

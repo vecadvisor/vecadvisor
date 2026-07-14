@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "vecadvisor"
-version = "0.1.0a1"
+version = "0.1.0a2"
 description = "Cost-based advisor for filtered vector search in PostgreSQL/pgvector"
 readme = "README.md"
 requires-python = ">=3.11"

@@ -1,0 +1,219 @@
+{
+  "proof": {
+    "passed": true,
+    "backend": "synthetic",
+    "point_count": 12,
+    "selectivity_bin_count": 4,
+    "prediction_match_rate": 1.0,
+    "postfilter_failure_count": 12,
+    "safe_advisor_on_postfilter_failures": 12,
+    "mean_speedup_vs_postfilter": 1.9804176327302176
+  },
+  "checks": [
+    {
+      "name": "minimum_points",
+      "passed": true,
+      "actual": 12,
+      "required": 3,
+      "detail": "sweep should cover enough points to avoid one-off conclusions"
+    },
+    {
+      "name": "minimum_selectivity_bins",
+      "passed": true,
+      "actual": 4,
+      "required": 3,
+      "detail": "proof should span multiple selectivity bins"
+    },
+    {
+      "name": "predictions_present",
+      "passed": true,
+      "actual": 12,
+      "required": 12,
+      "detail": "run benchmark-sweep with --calibration so predicted winners are present"
+    },
+    {
+      "name": "prediction_match_rate",
+      "passed": true,
+      "actual": 1.0,
+      "required": 0.6,
+      "detail": "advisor predicted winner should track measured lowest-p95 winner"
+    },
+    {
+      "name": "postfilter_failure_coverage",
+      "passed": true,
+      "actual": 12,
+      "required": 1,
+      "detail": "proof should include bins where default postfilter loses recall/returns-k"
+    },
+    {
+      "name": "advisor_safe_when_postfilter_fails",
+      "passed": true,
+      "actual": 12,
+      "required": 12,
+      "detail": "when postfilter fails quality targets, advisor must not pick postfilter"
+    }
+  ],
+  "points": [
+    {
+      "target_filter_selectivity": 0.01,
+      "target_correlation": -0.6,
+      "measured_best": "exact",
+      "predicted_best": "exact",
+      "prediction_match": true,
+      "predicted_strategy_viable": true,
+      "postfilter_viable": false,
+      "measured_best_latency_ms_p95": 0.1548246713355183,
+      "predicted_latency_ms_p95": 0.1548246713355183,
+      "postfilter_latency_ms_p95": 0.2365600550547242,
+      "speedup_vs_postfilter": 1.527922216880269
+    },
+    {
+      "target_filter_selectivity": 0.01,
+      "target_correlation": 0.0,
+      "measured_best": "exact",
+      "predicted_best": "exact",
+      "prediction_match": true,
+      "predicted_strategy_viable": true,
+      "postfilter_viable": false,
+      "measured_best_latency_ms_p95": 0.14282003976404664,
+      "predicted_latency_ms_p95": 0.14282003976404664,
+      "postfilter_latency_ms_p95": 0.2279750071465969,
+      "speedup_vs_postfilter": 1.5962396280188342
+    },
+    {
+      "target_filter_selectivity": 0.01,
+      "target_correlation": 0.6,
+      "measured_best": "exact",
+      "predicted_best": "exact",
+      "prediction_match": true,
+      "predicted_strategy_viable": true,
+      "postfilter_viable": false,
+      "measured_best_latency_ms_p95": 0.12177999597042798,
+      "predicted_latency_ms_p95": 0.12177999597042798,
+      "postfilter_latency_ms_p95": 0.44208527542650683,
+      "speedup_vs_postfilter": 3.630196173876201
+    },
+    {
+      "target_filter_selectivity": 0.05,
+      "target_correlation": -0.6,
+      "measured_best": "exact",
+      "predicted_best": "exact",
+      "prediction_match": true,
+      "predicted_strategy_viable": true,
+      "postfilter_viable": false,
+      "measured_best_latency_ms_p95": 0.1311298692598939,
+      "predicted_latency_ms_p95": 0.1311298692598939,
+      "postfilter_latency_ms_p95": 0.19369532819837332,
+      "speedup_vs_postfilter": 1.4771259156407555
+    },
+    {
+      "target_filter_selectivity": 0.05,
+      "target_correlation": 0.0,
+      "measured_best": "exact",
+      "predicted_best": "exact",
+      "prediction_match": true,
+      "predicted_strategy_viable": true,
+      "postfilter_viable": false,
+      "measured_best_latency_ms_p95": 0.14910479076206684,
+      "predicted_latency_ms_p95": 0.14910479076206684,
+      "postfilter_latency_ms_p95": 0.7502848282456398,
+      "speedup_vs_postfilter": 5.031929721446058
+    },
+    {
+      "target_filter_selectivity": 0.05,
+      "target_correlation": 0.6,
+      "measured_best": "exact",
+      "predicted_best": "exact",
+      "prediction_match": true,
+      "predicted_strategy_viable": true,
+      "postfilter_viable": false,
+      "measured_best_latency_ms_p95": 0.1323850592598319,
+      "predicted_latency_ms_p95": 0.1323850592598319,
+      "postfilter_latency_ms_p95": 0.22150492295622826,
+      "speedup_vs_postfilter": 1.6731867190653362
+    },
+    {
+      "target_filter_selectivity": 0.1,
+      "target_correlation": -0.6,
+      "measured_best": "exact",
+      "predicted_best": "exact",
+      "prediction_match": true,
+      "predicted_strategy_viable": true,
+      "postfilter_viable": false,
+      "measured_best_latency_ms_p95": 0.14000001829117537,
+      "predicted_latency_ms_p95": 0.14000001829117537,
+      "postfilter_latency_ms_p95": 0.4338796949014067,
+      "speedup_vs_postfilter": 3.099140272960632
+    },
+    {
+      "target_filter_selectivity": 0.1,
+      "target_correlation": 0.0,
+      "measured_best": "exact",
+      "predicted_best": "exact",
+      "prediction_match": true,
+      "predicted_strategy_viable": true,
+      "postfilter_viable": false,
+      "measured_best_latency_ms_p95": 0.21887528710067264,
+      "predicted_latency_ms_p95": 0.21887528710067264,
+      "postfilter_latency_ms_p95": 0.18986491486430168,
+      "speedup_vs_postfilter": 0.8674570682663342
+    },
+    {
+      "target_filter_selectivity": 0.1,
+      "target_correlation": 0.6,
+      "measured_best": "exact",
+      "predicted_best": "exact",
+      "prediction_match": true,
+      "predicted_strategy_viable": true,
+      "postfilter_viable": false,
+      "measured_best_latency_ms_p95": 0.14194508548825976,
+      "predicted_latency_ms_p95": 0.14194508548825976,
+      "postfilter_latency_ms_p95": 0.1911151222884655,
+      "speedup_vs_postfilter": 1.346401825967216
+    },
+    {
+      "target_filter_selectivity": 0.3,
+      "target_correlation": -0.6,
+      "measured_best": "exact",
+      "predicted_best": "exact",
+      "prediction_match": true,
+      "predicted_strategy_viable": true,
+      "postfilter_viable": false,
+      "measured_best_latency_ms_p95": 0.2112101763486862,
+      "predicted_latency_ms_p95": 0.2112101763486862,
+      "postfilter_latency_ms_p95": 0.21220508497208357,
+      "speedup_vs_postfilter": 1.00471051461912
+    },
+    {
+      "target_filter_selectivity": 0.3,
+      "target_correlation": 0.0,
+      "measured_best": "exact",
+      "predicted_best": "exact",
+      "prediction_match": true,
+      "predicted_strategy_viable": true,
+      "postfilter_viable": false,
+      "measured_best_latency_ms_p95": 0.17595994286239147,
+      "predicted_latency_ms_p95": 0.17595994286239147,
+      "postfilter_latency_ms_p95": 0.2964999992400407,
+      "speedup_vs_postfilter": 1.6850425978594286
+    },
+    {
+      "target_filter_selectivity": 0.3,
+      "target_correlation": 0.6,
+      "measured_best": "exact",
+      "predicted_best": "exact",
+      "prediction_match": true,
+      "predicted_strategy_viable": true,
+      "postfilter_viable": false,
+      "measured_best_latency_ms_p95": 0.4685953259468078,
+      "predicted_latency_ms_p95": 0.4685953259468078,
+      "postfilter_latency_ms_p95": 0.3868999192491173,
+      "speedup_vs_postfilter": 0.8256589381624262
+    }
+  ],
+  "notes": [
+    "proof consumes measured strategy metrics and predicted winners from sweep JSON",
+    "prediction quality is evaluated against measured lowest-p95 recall-safe winner",
+    "postfilter failure means recall or returns-k fell below sweep targets"
+  ]
+}

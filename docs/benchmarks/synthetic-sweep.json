@@ -1,0 +1,1865 @@
+{
+  "sweep": {
+    "backend": "synthetic",
+    "points": 12,
+    "rows": 2048,
+    "dim": 32,
+    "queries": 24,
+    "clusters": 8,
+    "limit": 10,
+    "metric": "l2",
+    "ef_search": 40,
+    "max_scan_tuples": 1000,
+    "probe_rows": 200,
+    "recall_target": 0.9,
+    "returns_k_target": 1.0,
+    "block_rows": null,
+    "query_policy": "uniform",
+    "iterative_order": null,
+    "hnsw_m": null,
+    "hnsw_ef_construction": null,
+    "statement_timeout_ms": null,
+    "seed": 411,
+    "filter_selectivities": [
+      0.01,
+      0.05,
+      0.1,
+      0.3
+    ],
+    "correlations": [
+      -0.6,
+      0.0,
+      0.6
+    ]
+  },
+  "points": [
+    {
+      "target_filter_selectivity": 0.01,
+      "target_correlation": -0.6,
+      "dataset": {
+        "id": "synthetic",
+        "rows": 2048,
+        "dim": 32,
+        "queries": 24,
+        "clusters": 8,
+        "query_policy": "uniform",
+        "target_filter_selectivity": 0.01,
+        "observed_filter_selectivity": 0.00439453125,
+        "correlation": -0.6,
+        "dataset_seed": 411,
+        "query_seed": 412
+      },
+      "ground_truth": {
+        "metric": "l2",
+        "k": 10,
+        "candidate_count": 9,
+        "block_rows": 2097152,
+        "blocks_scanned": 1,
+        "first_query_indices": [
+          480,
+          1442,
+          649,
+          1176,
+          1728,
+          1581,
+          6,
+          586,
+          1826
+        ]
+      },
+      "local_selectivity": {
+        "s_global": 0.00439453125,
+        "s_local_p10": 0.0,
+        "s_local_median": 0.005,
+        "probe_rows": 200,
+        "query_count": 24
+      },
+      "measured_best": "exact",
+      "predicted_best": "exact",
+      "prediction_match": true,
+      "predictions": [
+        {
+          "strategy": "exact",
+          "est_latency_ms": 0.007321972914628292,
+          "est_recall": 1.0,
+          "est_returns_k": true,
+          "confidence": 0.85,
+          "notes": [
+            "exact over ~9 filtered rows"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "est_latency_ms": 0.2039916968593995,
+          "est_recall": 0.0,
+          "est_returns_k": false,
+          "confidence": 0.8,
+          "notes": [
+            "expected survivors ~= 0.00"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "est_latency_ms": 50997924214.84988,
+          "est_recall": 0.0,
+          "est_returns_k": false,
+          "confidence": 0.8,
+          "notes": [
+            "expected candidates ~= 10000000000000"
+          ]
+        }
+      ],
+      "strategies": [
+        {
+          "strategy": "exact",
+          "params": {
+            "mode": "filtered_exact"
+          },
+          "query_count": 24,
+          "recall_at_k": 1.0,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 9.0,
+          "latency_ms": {
+            "total": 3.0512986704707146,
+            "mean": 0.12713744460294643,
+            "p50": 0.11739996261894703,
+            "p95": 0.1548246713355183,
+            "p99": 0.2565290546044707
+          },
+          "notes": [
+            "filtered exact search is the recall baseline"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "params": {
+            "ef_search": 40,
+            "mode": "exact_candidate_pool"
+          },
+          "query_count": 24,
+          "recall_at_k": 0.02314814814814815,
+          "returns_k_rate": 0.0,
+          "result_count_mean": 0.20833333333333334,
+          "latency_ms": {
+            "total": 5.2061001770198345,
+            "mean": 0.21692084070915976,
+            "p50": 0.21009985357522964,
+            "p95": 0.2365600550547242,
+            "p99": 0.318165048956871
+          },
+          "notes": [
+            "simulates post-filter semantics with exact unfiltered candidates",
+            "latency is CPU exact-search time, not pgvector HNSW latency"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "params": {
+            "max_scan_tuples": 1000,
+            "mode": "exact_candidate_expansion"
+          },
+          "query_count": 24,
+          "recall_at_k": 0.5277777777777778,
+          "returns_k_rate": 0.0,
+          "result_count_mean": 4.75,
+          "latency_ms": {
+            "total": 13.07449908927083,
+            "mean": 0.5447707953862846,
+            "p50": 0.3900500014424324,
+            "p95": 1.3924046652391537,
+            "p99": 2.022641878575086
+          },
+          "notes": [
+            "simulates iterative expansion with exact unfiltered candidates",
+            "latency is CPU exact-search time, not pgvector HNSW latency"
+          ]
+        }
+      ],
+      "elapsed_ms": 31.41009993851185,
+      "notes": [
+        "ground truth computed with blocked exact filtered search",
+        "postfilter and iterative rows are strategy-semantics simulations"
+      ]
+    },
+    {
+      "target_filter_selectivity": 0.01,
+      "target_correlation": 0.0,
+      "dataset": {
+        "id": "synthetic",
+        "rows": 2048,
+        "dim": 32,
+        "queries": 24,
+        "clusters": 8,
+        "query_policy": "uniform",
+        "target_filter_selectivity": 0.01,
+        "observed_filter_selectivity": 0.01025390625,
+        "correlation": 0.0,
+        "dataset_seed": 1420,
+        "query_seed": 1421
+      },
+      "ground_truth": {
+        "metric": "l2",
+        "k": 10,
+        "candidate_count": 21,
+        "block_rows": 2097152,
+        "blocks_scanned": 1,
+        "first_query_indices": [
+          1170,
+          893,
+          1506,
+          975,
+          234,
+          795,
+          2003,
+          1141,
+          747,
+          1530
+        ]
+      },
+      "local_selectivity": {
+        "s_global": 0.01025390625,
+        "s_local_p10": 0.005,
+        "s_local_median": 0.0125,
+        "probe_rows": 200,
+        "query_count": 24
+      },
+      "measured_best": "exact",
+      "predicted_best": "exact",
+      "prediction_match": true,
+      "predictions": [
+        {
+          "strategy": "exact",
+          "est_latency_ms": 0.017084603467466014,
+          "est_recall": 1.0,
+          "est_returns_k": true,
+          "confidence": 0.85,
+          "notes": [
+            "exact over ~21 filtered rows"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "est_latency_ms": 0.2039916968593995,
+          "est_recall": 0.006416666666666668,
+          "est_returns_k": false,
+          "confidence": 0.8,
+          "notes": [
+            "expected survivors ~= 0.20"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "est_latency_ms": 10.199584842969974,
+          "est_recall": 0.16041666666666668,
+          "est_returns_k": false,
+          "confidence": 0.8,
+          "notes": [
+            "expected candidates ~= 2000"
+          ]
+        }
+      ],
+      "strategies": [
+        {
+          "strategy": "exact",
+          "params": {
+            "mode": "filtered_exact"
+          },
+          "query_count": 24,
+          "recall_at_k": 1.0,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 3.010599873960018,
+            "mean": 0.12544166141500077,
+            "p50": 0.11834991164505482,
+            "p95": 0.14282003976404664,
+            "p99": 0.1934880670160055
+          },
+          "notes": [
+            "filtered exact search is the recall baseline"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "params": {
+            "ef_search": 40,
+            "mode": "exact_candidate_pool"
+          },
+          "query_count": 24,
+          "recall_at_k": 0.04583333333333334,
+          "returns_k_rate": 0.0,
+          "result_count_mean": 0.4583333333333333,
+          "latency_ms": {
+            "total": 5.031300242990255,
+            "mean": 0.20963751012459397,
+            "p50": 0.2048499882221222,
+            "p95": 0.2279750071465969,
+            "p99": 0.26730828918516636
+          },
+          "notes": [
+            "simulates post-filter semantics with exact unfiltered candidates",
+            "latency is CPU exact-search time, not pgvector HNSW latency"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "params": {
+            "max_scan_tuples": 1000,
+            "mode": "exact_candidate_expansion"
+          },
+          "query_count": 24,
+          "recall_at_k": 0.9208333333333334,
+          "returns_k_rate": 0.75,
+          "result_count_mean": 9.208333333333334,
+          "latency_ms": {
+            "total": 9.270499926060438,
+            "mean": 0.38627083025251824,
+            "p50": 0.3621999640017748,
+            "p95": 0.5166199291124939,
+            "p99": 0.6810880359262227
+          },
+          "notes": [
+            "simulates iterative expansion with exact unfiltered candidates",
+            "latency is CPU exact-search time, not pgvector HNSW latency"
+          ]
+        }
+      ],
+      "elapsed_ms": 18.558999989181757,
+      "notes": [
+        "ground truth computed with blocked exact filtered search",
+        "postfilter and iterative rows are strategy-semantics simulations"
+      ]
+    },
+    {
+      "target_filter_selectivity": 0.01,
+      "target_correlation": 0.6,
+      "dataset": {
+        "id": "synthetic",
+        "rows": 2048,
+        "dim": 32,
+        "queries": 24,
+        "clusters": 8,
+        "query_policy": "uniform",
+        "target_filter_selectivity": 0.01,
+        "observed_filter_selectivity": 0.01318359375,
+        "correlation": 0.6,
+        "dataset_seed": 2429,
+        "query_seed": 2430
+      },
+      "ground_truth": {
+        "metric": "l2",
+        "k": 10,
+        "candidate_count": 27,
+        "block_rows": 2097152,
+        "blocks_scanned": 1,
+        "first_query_indices": [
+          382,
+          1875,
+          1601,
+          641,
+          232,
+          1373,
+          441,
+          871,
+          1285,
+          1291
+        ]
+      },
+      "local_selectivity": {
+        "s_global": 0.01318359375,
+        "s_local_p10": 0.0,
+        "s_local_median": 0.005,
+        "probe_rows": 200,
+        "query_count": 24
+      },
+      "measured_best": "exact",
+      "predicted_best": "exact",
+      "prediction_match": true,
+      "predictions": [
+        {
+          "strategy": "exact",
+          "est_latency_ms": 0.021965918743884878,
+          "est_recall": 1.0,
+          "est_returns_k": true,
+          "confidence": 0.85,
+          "notes": [
+            "exact over ~27 filtered rows"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "est_latency_ms": 0.2039916968593995,
+          "est_recall": 0.0,
+          "est_returns_k": false,
+          "confidence": 0.8,
+          "notes": [
+            "expected survivors ~= 0.00"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "est_latency_ms": 50997924214.84988,
+          "est_recall": 0.0,
+          "est_returns_k": false,
+          "confidence": 0.8,
+          "notes": [
+            "expected candidates ~= 10000000000000"
+          ]
+        }
+      ],
+      "strategies": [
+        {
+          "strategy": "exact",
+          "params": {
+            "mode": "filtered_exact"
+          },
+          "query_count": 24,
+          "recall_at_k": 1.0,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 2.6721004396677017,
+            "mean": 0.11133751831948757,
+            "p50": 0.10835006833076477,
+            "p95": 0.12177999597042798,
+            "p99": 0.14690091833472252
+          },
+          "notes": [
+            "filtered exact search is the recall baseline"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "params": {
+            "ef_search": 40,
+            "mode": "exact_candidate_pool"
+          },
+          "query_count": 24,
+          "recall_at_k": 0.04583333333333334,
+          "returns_k_rate": 0.0,
+          "result_count_mean": 0.4583333333333333,
+          "latency_ms": {
+            "total": 5.412300117313862,
+            "mean": 0.2255125048880776,
+            "p50": 0.1859001349657774,
+            "p95": 0.44208527542650683,
+            "p99": 0.47054626047611237
+          },
+          "notes": [
+            "simulates post-filter semantics with exact unfiltered candidates",
+            "latency is CPU exact-search time, not pgvector HNSW latency"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "params": {
+            "max_scan_tuples": 1000,
+            "mode": "exact_candidate_expansion"
+          },
+          "query_count": 24,
+          "recall_at_k": 0.8291666666666666,
+          "returns_k_rate": 0.4583333333333333,
+          "result_count_mean": 8.291666666666666,
+          "latency_ms": {
+            "total": 8.266800083220005,
+            "mean": 0.3444500034675002,
+            "p50": 0.35980017855763435,
+            "p95": 0.3689098171889782,
+            "p99": 0.3768540220335126
+          },
+          "notes": [
+            "simulates iterative expansion with exact unfiltered candidates",
+            "latency is CPU exact-search time, not pgvector HNSW latency"
+          ]
+        }
+      ],
+      "elapsed_ms": 17.48059969395399,
+      "notes": [
+        "ground truth computed with blocked exact filtered search",
+        "postfilter and iterative rows are strategy-semantics simulations"
+      ]
+    },
+    {
+      "target_filter_selectivity": 0.05,
+      "target_correlation": -0.6,
+      "dataset": {
+        "id": "synthetic",
+        "rows": 2048,
+        "dim": 32,
+        "queries": 24,
+        "clusters": 8,
+        "query_policy": "uniform",
+        "target_filter_selectivity": 0.05,
+        "observed_filter_selectivity": 0.05517578125,
+        "correlation": -0.6,
+        "dataset_seed": 3438,
+        "query_seed": 3439
+      },
+      "ground_truth": {
+        "metric": "l2",
+        "k": 10,
+        "candidate_count": 113,
+        "block_rows": 2097152,
+        "blocks_scanned": 1,
+        "first_query_indices": [
+          1177,
+          419,
+          575,
+          1388,
+          1478,
+          1636,
+          1998,
+          313,
+          699,
+          509
+        ]
+      },
+      "local_selectivity": {
+        "s_global": 0.05517578125,
+        "s_local_p10": 0.0,
+        "s_local_median": 0.0125,
+        "probe_rows": 200,
+        "query_count": 24
+      },
+      "measured_best": "exact",
+      "predicted_best": "exact",
+      "prediction_match": true,
+      "predictions": [
+        {
+          "strategy": "exact",
+          "est_latency_ms": 0.09193143770588857,
+          "est_recall": 1.0,
+          "est_returns_k": true,
+          "confidence": 0.85,
+          "notes": [
+            "exact over ~113 filtered rows"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "est_latency_ms": 0.2039916968593995,
+          "est_recall": 0.0,
+          "est_returns_k": false,
+          "confidence": 0.8,
+          "notes": [
+            "expected survivors ~= 0.00"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "est_latency_ms": 50997924214.84988,
+          "est_recall": 0.0,
+          "est_returns_k": false,
+          "confidence": 0.8,
+          "notes": [
+            "expected candidates ~= 10000000000000"
+          ]
+        }
+      ],
+      "strategies": [
+        {
+          "strategy": "exact",
+          "params": {
+            "mode": "filtered_exact"
+          },
+          "query_count": 24,
+          "recall_at_k": 1.0,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 2.899100072681904,
+            "mean": 0.120795836361746,
+            "p50": 0.11530006304383278,
+            "p95": 0.1311298692598939,
+            "p99": 0.17821619287133214
+          },
+          "notes": [
+            "filtered exact search is the recall baseline"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "params": {
+            "ef_search": 40,
+            "mode": "exact_candidate_pool"
+          },
+          "query_count": 24,
+          "recall_at_k": 0.1875,
+          "returns_k_rate": 0.08333333333333333,
+          "result_count_mean": 1.875,
+          "latency_ms": {
+            "total": 4.439398180693388,
+            "mean": 0.18497492419555783,
+            "p50": 0.18329964950680733,
+            "p95": 0.19369532819837332,
+            "p99": 0.20442585460841656
+          },
+          "notes": [
+            "simulates post-filter semantics with exact unfiltered candidates",
+            "latency is CPU exact-search time, not pgvector HNSW latency"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "params": {
+            "max_scan_tuples": 1000,
+            "mode": "exact_candidate_expansion"
+          },
+          "query_count": 24,
+          "recall_at_k": 1.0,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 8.303199429064989,
+            "mean": 0.3459666428777079,
+            "p50": 0.30399998649954796,
+            "p95": 0.610804837197065,
+            "p99": 0.7692219549790024
+          },
+          "notes": [
+            "simulates iterative expansion with exact unfiltered candidates",
+            "latency is CPU exact-search time, not pgvector HNSW latency"
+          ]
+        }
+      ],
+      "elapsed_ms": 16.833200119435787,
+      "notes": [
+        "ground truth computed with blocked exact filtered search",
+        "postfilter and iterative rows are strategy-semantics simulations"
+      ]
+    },
+    {
+      "target_filter_selectivity": 0.05,
+      "target_correlation": 0.0,
+      "dataset": {
+        "id": "synthetic",
+        "rows": 2048,
+        "dim": 32,
+        "queries": 24,
+        "clusters": 8,
+        "query_policy": "uniform",
+        "target_filter_selectivity": 0.05,
+        "observed_filter_selectivity": 0.04443359375,
+        "correlation": 0.0,
+        "dataset_seed": 4447,
+        "query_seed": 4448
+      },
+      "ground_truth": {
+        "metric": "l2",
+        "k": 10,
+        "candidate_count": 91,
+        "block_rows": 2097152,
+        "blocks_scanned": 1,
+        "first_query_indices": [
+          503,
+          1257,
+          1132,
+          1570,
+          475,
+          1989,
+          1490,
+          1029,
+          569,
+          1873
+        ]
+      },
+      "local_selectivity": {
+        "s_global": 0.04443359375,
+        "s_local_p10": 0.023000000000000003,
+        "s_local_median": 0.0475,
+        "probe_rows": 200,
+        "query_count": 24
+      },
+      "measured_best": "exact",
+      "predicted_best": "exact",
+      "prediction_match": true,
+      "predictions": [
+        {
+          "strategy": "exact",
+          "est_latency_ms": 0.07403328169235275,
+          "est_recall": 1.0,
+          "est_returns_k": true,
+          "confidence": 0.85,
+          "notes": [
+            "exact over ~91 filtered rows"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "est_latency_ms": 0.2039916968593995,
+          "est_recall": 0.029516666666666674,
+          "est_returns_k": false,
+          "confidence": 0.8,
+          "notes": [
+            "expected survivors ~= 0.92"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "est_latency_ms": 2.2173010528195594,
+          "est_recall": 0.32083333333333336,
+          "est_returns_k": true,
+          "confidence": 0.8,
+          "notes": [
+            "expected candidates ~= 435"
+          ]
+        }
+      ],
+      "strategies": [
+        {
+          "strategy": "exact",
+          "params": {
+            "mode": "filtered_exact"
+          },
+          "query_count": 24,
+          "recall_at_k": 1.0,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 3.2639000564813614,
+            "mean": 0.13599583568672338,
+            "p50": 0.13135024346411228,
+            "p95": 0.14910479076206684,
+            "p99": 0.18286399543285367
+          },
+          "notes": [
+            "filtered exact search is the recall baseline"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "params": {
+            "ef_search": 40,
+            "mode": "exact_candidate_pool"
+          },
+          "query_count": 24,
+          "recall_at_k": 0.16666666666666666,
+          "returns_k_rate": 0.0,
+          "result_count_mean": 1.6666666666666667,
+          "latency_ms": {
+            "total": 7.777399383485317,
+            "mean": 0.32405830764522153,
+            "p50": 0.2079999540001154,
+            "p95": 0.7502848282456398,
+            "p99": 0.9722749423235654
+          },
+          "notes": [
+            "simulates post-filter semantics with exact unfiltered candidates",
+            "latency is CPU exact-search time, not pgvector HNSW latency"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "params": {
+            "max_scan_tuples": 1000,
+            "mode": "exact_candidate_expansion"
+          },
+          "query_count": 24,
+          "recall_at_k": 1.0,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 7.330500520765781,
+            "mean": 0.30543752169857424,
+            "p50": 0.3003000747412443,
+            "p95": 0.3373452229425311,
+            "p99": 0.40602113585919136
+          },
+          "notes": [
+            "simulates iterative expansion with exact unfiltered candidates",
+            "latency is CPU exact-search time, not pgvector HNSW latency"
+          ]
+        }
+      ],
+      "elapsed_ms": 19.845999777317047,
+      "notes": [
+        "ground truth computed with blocked exact filtered search",
+        "postfilter and iterative rows are strategy-semantics simulations"
+      ]
+    },
+    {
+      "target_filter_selectivity": 0.05,
+      "target_correlation": 0.6,
+      "dataset": {
+        "id": "synthetic",
+        "rows": 2048,
+        "dim": 32,
+        "queries": 24,
+        "clusters": 8,
+        "query_policy": "uniform",
+        "target_filter_selectivity": 0.05,
+        "observed_filter_selectivity": 0.0478515625,
+        "correlation": 0.6,
+        "dataset_seed": 5456,
+        "query_seed": 5457
+      },
+      "ground_truth": {
+        "metric": "l2",
+        "k": 10,
+        "candidate_count": 98,
+        "block_rows": 2097152,
+        "blocks_scanned": 1,
+        "first_query_indices": [
+          1463,
+          391,
+          2047,
+          1563,
+          1498,
+          1739,
+          857,
+          756,
+          1428,
+          338
+        ]
+      },
+      "local_selectivity": {
+        "s_global": 0.0478515625,
+        "s_local_p10": 0.0,
+        "s_local_median": 0.015,
+        "probe_rows": 200,
+        "query_count": 24
+      },
+      "measured_best": "exact",
+      "predicted_best": "exact",
+      "prediction_match": true,
+      "predictions": [
+        {
+          "strategy": "exact",
+          "est_latency_ms": 0.0797281495148414,
+          "est_recall": 1.0,
+          "est_returns_k": true,
+          "confidence": 0.85,
+          "notes": [
+            "exact over ~98 filtered rows"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "est_latency_ms": 0.2039916968593995,
+          "est_recall": 0.0,
+          "est_returns_k": false,
+          "confidence": 0.8,
+          "notes": [
+            "expected survivors ~= 0.00"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "est_latency_ms": 50997924214.84988,
+          "est_recall": 0.0,
+          "est_returns_k": false,
+          "confidence": 0.8,
+          "notes": [
+            "expected candidates ~= 10000000000000"
+          ]
+        }
+      ],
+      "strategies": [
+        {
+          "strategy": "exact",
+          "params": {
+            "mode": "filtered_exact"
+          },
+          "query_count": 24,
+          "recall_at_k": 1.0,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 3.002200275659561,
+            "mean": 0.1250916781524817,
+            "p50": 0.11914991773664951,
+            "p95": 0.1323850592598319,
+            "p99": 0.2012377046048641
+          },
+          "notes": [
+            "filtered exact search is the recall baseline"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "params": {
+            "ef_search": 40,
+            "mode": "exact_candidate_pool"
+          },
+          "query_count": 24,
+          "recall_at_k": 0.15,
+          "returns_k_rate": 0.0,
+          "result_count_mean": 1.5,
+          "latency_ms": {
+            "total": 4.956100136041641,
+            "mean": 0.20650417233506838,
+            "p50": 0.20370003767311573,
+            "p95": 0.22150492295622826,
+            "p99": 0.22239303681999445
+          },
+          "notes": [
+            "simulates post-filter semantics with exact unfiltered candidates",
+            "latency is CPU exact-search time, not pgvector HNSW latency"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "params": {
+            "max_scan_tuples": 1000,
+            "mode": "exact_candidate_expansion"
+          },
+          "query_count": 24,
+          "recall_at_k": 1.0,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 8.227100130170584,
+            "mean": 0.3427958387571077,
+            "p50": 0.3232499584555626,
+            "p95": 0.5538400029763576,
+            "p99": 0.6359182391315699
+          },
+          "notes": [
+            "simulates iterative expansion with exact unfiltered candidates",
+            "latency is CPU exact-search time, not pgvector HNSW latency"
+          ]
+        }
+      ],
+      "elapsed_ms": 17.407800070941448,
+      "notes": [
+        "ground truth computed with blocked exact filtered search",
+        "postfilter and iterative rows are strategy-semantics simulations"
+      ]
+    },
+    {
+      "target_filter_selectivity": 0.1,
+      "target_correlation": -0.6,
+      "dataset": {
+        "id": "synthetic",
+        "rows": 2048,
+        "dim": 32,
+        "queries": 24,
+        "clusters": 8,
+        "query_policy": "uniform",
+        "target_filter_selectivity": 0.1,
+        "observed_filter_selectivity": 0.09716796875,
+        "correlation": -0.6,
+        "dataset_seed": 6465,
+        "query_seed": 6466
+      },
+      "ground_truth": {
+        "metric": "l2",
+        "k": 10,
+        "candidate_count": 199,
+        "block_rows": 2097152,
+        "blocks_scanned": 1,
+        "first_query_indices": [
+          550,
+          334,
+          27,
+          1308,
+          48,
+          370,
+          613,
+          84,
+          857,
+          1725
+        ]
+      },
+      "local_selectivity": {
+        "s_global": 0.09716796875,
+        "s_local_p10": 0.0015000000000000013,
+        "s_local_median": 0.02,
+        "probe_rows": 200,
+        "query_count": 24
+      },
+      "measured_best": "exact",
+      "predicted_best": "exact",
+      "prediction_match": true,
+      "predictions": [
+        {
+          "strategy": "exact",
+          "est_latency_ms": 0.16189695666789225,
+          "est_recall": 1.0,
+          "est_returns_k": true,
+          "confidence": 0.85,
+          "notes": [
+            "exact over ~199 filtered rows"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "est_latency_ms": 0.2039916968593995,
+          "est_recall": 0.0019250000000000018,
+          "est_returns_k": false,
+          "confidence": 0.8,
+          "notes": [
+            "expected survivors ~= 0.06"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "est_latency_ms": 33.998616143233214,
+          "est_recall": 0.04812500000000005,
+          "est_returns_k": false,
+          "confidence": 0.8,
+          "notes": [
+            "expected candidates ~= 6667"
+          ]
+        }
+      ],
+      "strategies": [
+        {
+          "strategy": "exact",
+          "params": {
+            "mode": "filtered_exact"
+          },
+          "query_count": 24,
+          "recall_at_k": 1.0,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 3.140700049698353,
+            "mean": 0.1308625020707647,
+            "p50": 0.1277499832212925,
+            "p95": 0.14000001829117537,
+            "p99": 0.1655558543279767
+          },
+          "notes": [
+            "filtered exact search is the recall baseline"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "params": {
+            "ef_search": 40,
+            "mode": "exact_candidate_pool"
+          },
+          "query_count": 24,
+          "recall_at_k": 0.15416666666666667,
+          "returns_k_rate": 0.041666666666666664,
+          "result_count_mean": 1.5416666666666667,
+          "latency_ms": {
+            "total": 5.429299082607031,
+            "mean": 0.22622079510862628,
+            "p50": 0.18480001017451286,
+            "p95": 0.4338796949014067,
+            "p99": 0.4591998877003789
+          },
+          "notes": [
+            "simulates post-filter semantics with exact unfiltered candidates",
+            "latency is CPU exact-search time, not pgvector HNSW latency"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "params": {
+            "max_scan_tuples": 1000,
+            "mode": "exact_candidate_expansion"
+          },
+          "query_count": 24,
+          "recall_at_k": 1.0,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 7.046901620924473,
+            "mean": 0.29362090087185305,
+            "p50": 0.2887500450015068,
+            "p95": 0.3452301025390625,
+            "p99": 0.3507731994614005
+          },
+          "notes": [
+            "simulates iterative expansion with exact unfiltered candidates",
+            "latency is CPU exact-search time, not pgvector HNSW latency"
+          ]
+        }
+      ],
+      "elapsed_ms": 16.81429985910654,
+      "notes": [
+        "ground truth computed with blocked exact filtered search",
+        "postfilter and iterative rows are strategy-semantics simulations"
+      ]
+    },
+    {
+      "target_filter_selectivity": 0.1,
+      "target_correlation": 0.0,
+      "dataset": {
+        "id": "synthetic",
+        "rows": 2048,
+        "dim": 32,
+        "queries": 24,
+        "clusters": 8,
+        "query_policy": "uniform",
+        "target_filter_selectivity": 0.1,
+        "observed_filter_selectivity": 0.1064453125,
+        "correlation": 0.0,
+        "dataset_seed": 7474,
+        "query_seed": 7475
+      },
+      "ground_truth": {
+        "metric": "l2",
+        "k": 10,
+        "candidate_count": 218,
+        "block_rows": 2097152,
+        "blocks_scanned": 1,
+        "first_query_indices": [
+          1496,
+          183,
+          1086,
+          1409,
+          1593,
+          1833,
+          576,
+          1052,
+          1739,
+          1737
+        ]
+      },
+      "local_selectivity": {
+        "s_global": 0.1064453125,
+        "s_local_p10": 0.083,
+        "s_local_median": 0.105,
+        "probe_rows": 200,
+        "query_count": 24
+      },
+      "measured_best": "exact",
+      "predicted_best": "exact",
+      "prediction_match": true,
+      "predictions": [
+        {
+          "strategy": "exact",
+          "est_latency_ms": 0.17735445504321865,
+          "est_recall": 1.0,
+          "est_returns_k": true,
+          "confidence": 0.85,
+          "notes": [
+            "exact over ~218 filtered rows"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "est_latency_ms": 0.2039916968593995,
+          "est_recall": 0.10651666666666668,
+          "est_returns_k": false,
+          "confidence": 0.8,
+          "notes": [
+            "expected survivors ~= 3.32"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "est_latency_ms": 0.6144328218656611,
+          "est_recall": 0.32083333333333336,
+          "est_returns_k": true,
+          "confidence": 0.8,
+          "notes": [
+            "expected candidates ~= 120"
+          ]
+        }
+      ],
+      "strategies": [
+        {
+          "strategy": "exact",
+          "params": {
+            "mode": "filtered_exact"
+          },
+          "query_count": 24,
+          "recall_at_k": 1.0,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 3.428500145673752,
+            "mean": 0.14285417273640633,
+            "p50": 0.13044988736510277,
+            "p95": 0.21887528710067264,
+            "p99": 0.24328009691089392
+          },
+          "notes": [
+            "filtered exact search is the recall baseline"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "params": {
+            "ef_search": 40,
+            "mode": "exact_candidate_pool"
+          },
+          "query_count": 24,
+          "recall_at_k": 0.45416666666666666,
+          "returns_k_rate": 0.041666666666666664,
+          "result_count_mean": 4.541666666666667,
+          "latency_ms": {
+            "total": 4.3641007505357265,
+            "mean": 0.18183753127232194,
+            "p50": 0.17945002764463425,
+            "p95": 0.18986491486430168,
+            "p99": 0.20338985603302717
+          },
+          "notes": [
+            "simulates post-filter semantics with exact unfiltered candidates",
+            "latency is CPU exact-search time, not pgvector HNSW latency"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "params": {
+            "max_scan_tuples": 1000,
+            "mode": "exact_candidate_expansion"
+          },
+          "query_count": 24,
+          "recall_at_k": 1.0,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 6.39190012589097,
+            "mean": 0.26632917191212374,
+            "p50": 0.264700036495924,
+            "p95": 0.27327993884682655,
+            "p99": 0.28825271409004927
+          },
+          "notes": [
+            "simulates iterative expansion with exact unfiltered candidates",
+            "latency is CPU exact-search time, not pgvector HNSW latency"
+          ]
+        }
+      ],
+      "elapsed_ms": 15.317699871957302,
+      "notes": [
+        "ground truth computed with blocked exact filtered search",
+        "postfilter and iterative rows are strategy-semantics simulations"
+      ]
+    },
+    {
+      "target_filter_selectivity": 0.1,
+      "target_correlation": 0.6,
+      "dataset": {
+        "id": "synthetic",
+        "rows": 2048,
+        "dim": 32,
+        "queries": 24,
+        "clusters": 8,
+        "query_policy": "uniform",
+        "target_filter_selectivity": 0.1,
+        "observed_filter_selectivity": 0.10791015625,
+        "correlation": 0.6,
+        "dataset_seed": 8483,
+        "query_seed": 8484
+      },
+      "ground_truth": {
+        "metric": "l2",
+        "k": 10,
+        "candidate_count": 221,
+        "block_rows": 2097152,
+        "blocks_scanned": 1,
+        "first_query_indices": [
+          1871,
+          1124,
+          1505,
+          1877,
+          1044,
+          1991,
+          774,
+          1496,
+          1699,
+          493
+        ]
+      },
+      "local_selectivity": {
+        "s_global": 0.10791015625,
+        "s_local_p10": 0.0,
+        "s_local_median": 0.03,
+        "probe_rows": 200,
+        "query_count": 24
+      },
+      "measured_best": "exact",
+      "predicted_best": "exact",
+      "prediction_match": true,
+      "predictions": [
+        {
+          "strategy": "exact",
+          "est_latency_ms": 0.17979511268142806,
+          "est_recall": 1.0,
+          "est_returns_k": true,
+          "confidence": 0.85,
+          "notes": [
+            "exact over ~221 filtered rows"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "est_latency_ms": 0.2039916968593995,
+          "est_recall": 0.0,
+          "est_returns_k": false,
+          "confidence": 0.8,
+          "notes": [
+            "expected survivors ~= 0.00"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "est_latency_ms": 50997924214.84988,
+          "est_recall": 0.0,
+          "est_returns_k": false,
+          "confidence": 0.8,
+          "notes": [
+            "expected candidates ~= 10000000000000"
+          ]
+        }
+      ],
+      "strategies": [
+        {
+          "strategy": "exact",
+          "params": {
+            "mode": "filtered_exact"
+          },
+          "query_count": 24,
+          "recall_at_k": 1.0,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 3.168100956827402,
+            "mean": 0.1320042065344751,
+            "p50": 0.12834998778998852,
+            "p95": 0.14194508548825976,
+            "p99": 0.17859704326838252
+          },
+          "notes": [
+            "filtered exact search is the recall baseline"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "params": {
+            "ef_search": 40,
+            "mode": "exact_candidate_pool"
+          },
+          "query_count": 24,
+          "recall_at_k": 0.32083333333333336,
+          "returns_k_rate": 0.25,
+          "result_count_mean": 3.2083333333333335,
+          "latency_ms": {
+            "total": 4.380000755190849,
+            "mean": 0.18250003146628538,
+            "p50": 0.18150010146200657,
+            "p95": 0.1911151222884655,
+            "p99": 0.1970900408923626
+          },
+          "notes": [
+            "simulates post-filter semantics with exact unfiltered candidates",
+            "latency is CPU exact-search time, not pgvector HNSW latency"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "params": {
+            "max_scan_tuples": 1000,
+            "mode": "exact_candidate_expansion"
+          },
+          "query_count": 24,
+          "recall_at_k": 1.0,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 12.20260001718998,
+            "mean": 0.5084416673829159,
+            "p50": 0.5240996833890676,
+            "p95": 0.759960152208805,
+            "p99": 0.9044041065499185
+          },
+          "notes": [
+            "simulates iterative expansion with exact unfiltered candidates",
+            "latency is CPU exact-search time, not pgvector HNSW latency"
+          ]
+        }
+      ],
+      "elapsed_ms": 20.921200048178434,
+      "notes": [
+        "ground truth computed with blocked exact filtered search",
+        "postfilter and iterative rows are strategy-semantics simulations"
+      ]
+    },
+    {
+      "target_filter_selectivity": 0.3,
+      "target_correlation": -0.6,
+      "dataset": {
+        "id": "synthetic",
+        "rows": 2048,
+        "dim": 32,
+        "queries": 24,
+        "clusters": 8,
+        "query_policy": "uniform",
+        "target_filter_selectivity": 0.3,
+        "observed_filter_selectivity": 0.30078125,
+        "correlation": -0.6,
+        "dataset_seed": 9492,
+        "query_seed": 9493
+      },
+      "ground_truth": {
+        "metric": "l2",
+        "k": 10,
+        "candidate_count": 616,
+        "block_rows": 2097152,
+        "blocks_scanned": 1,
+        "first_query_indices": [
+          154,
+          225,
+          1117,
+          522,
+          1712,
+          1122,
+          876,
+          1777,
+          954,
+          36
+        ]
+      },
+      "local_selectivity": {
+        "s_global": 0.30078125,
+        "s_local_p10": 0.02,
+        "s_local_median": 0.07,
+        "probe_rows": 200,
+        "query_count": 24
+      },
+      "measured_best": "exact",
+      "predicted_best": "exact",
+      "prediction_match": true,
+      "predictions": [
+        {
+          "strategy": "exact",
+          "est_latency_ms": 0.5011483683790031,
+          "est_recall": 1.0,
+          "est_returns_k": true,
+          "confidence": 0.85,
+          "notes": [
+            "exact over ~616 filtered rows"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "est_latency_ms": 0.2039916968593995,
+          "est_recall": 0.02566666666666667,
+          "est_returns_k": false,
+          "confidence": 0.8,
+          "notes": [
+            "expected survivors ~= 0.80"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "est_latency_ms": 2.5498962107424936,
+          "est_recall": 0.32083333333333336,
+          "est_returns_k": true,
+          "confidence": 0.8,
+          "notes": [
+            "expected candidates ~= 500"
+          ]
+        }
+      ],
+      "strategies": [
+        {
+          "strategy": "exact",
+          "params": {
+            "mode": "filtered_exact"
+          },
+          "query_count": 24,
+          "recall_at_k": 1.0,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 4.641900304704905,
+            "mean": 0.19341251269603768,
+            "p50": 0.18900004215538502,
+            "p95": 0.2112101763486862,
+            "p99": 0.2510692458599806
+          },
+          "notes": [
+            "filtered exact search is the recall baseline"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "params": {
+            "ef_search": 40,
+            "mode": "exact_candidate_pool"
+          },
+          "query_count": 24,
+          "recall_at_k": 0.47500000000000003,
+          "returns_k_rate": 0.3333333333333333,
+          "result_count_mean": 4.75,
+          "latency_ms": {
+            "total": 4.701499827206135,
+            "mean": 0.19589582613358894,
+            "p50": 0.19100005738437176,
+            "p95": 0.21220508497208357,
+            "p99": 0.23464500438421965
+          },
+          "notes": [
+            "simulates post-filter semantics with exact unfiltered candidates",
+            "latency is CPU exact-search time, not pgvector HNSW latency"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "params": {
+            "max_scan_tuples": 1000,
+            "mode": "exact_candidate_expansion"
+          },
+          "query_count": 24,
+          "recall_at_k": 1.0,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 7.438999600708485,
+            "mean": 0.30995831669618684,
+            "p50": 0.29159989207983017,
+            "p95": 0.4207151941955088,
+            "p99": 0.4999000625684857
+          },
+          "notes": [
+            "simulates iterative expansion with exact unfiltered candidates",
+            "latency is CPU exact-search time, not pgvector HNSW latency"
+          ]
+        }
+      ],
+      "elapsed_ms": 18.011999782174826,
+      "notes": [
+        "ground truth computed with blocked exact filtered search",
+        "postfilter and iterative rows are strategy-semantics simulations"
+      ]
+    },
+    {
+      "target_filter_selectivity": 0.3,
+      "target_correlation": 0.0,
+      "dataset": {
+        "id": "synthetic",
+        "rows": 2048,
+        "dim": 32,
+        "queries": 24,
+        "clusters": 8,
+        "query_policy": "uniform",
+        "target_filter_selectivity": 0.3,
+        "observed_filter_selectivity": 0.31982421875,
+        "correlation": 0.0,
+        "dataset_seed": 10501,
+        "query_seed": 10502
+      },
+      "ground_truth": {
+        "metric": "l2",
+        "k": 10,
+        "candidate_count": 655,
+        "block_rows": 2097152,
+        "blocks_scanned": 1,
+        "first_query_indices": [
+          1782,
+          1379,
+          1779,
+          1056,
+          768,
+          982,
+          1479,
+          92,
+          847,
+          1120
+        ]
+      },
+      "local_selectivity": {
+        "s_global": 0.31982421875,
+        "s_local_p10": 0.2915,
+        "s_local_median": 0.3175,
+        "probe_rows": 200,
+        "query_count": 24
+      },
+      "measured_best": "exact",
+      "predicted_best": "exact",
+      "prediction_match": true,
+      "predictions": [
+        {
+          "strategy": "exact",
+          "est_latency_ms": 0.5328769176757258,
+          "est_recall": 1.0,
+          "est_returns_k": true,
+          "confidence": 0.85,
+          "notes": [
+            "exact over ~655 filtered rows"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "est_latency_ms": 0.2039916968593995,
+          "est_recall": 0.32083333333333336,
+          "est_returns_k": true,
+          "confidence": 0.8,
+          "notes": [
+            "expected survivors ~= 11.66"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "est_latency_ms": 0.17494999730651759,
+          "est_recall": 0.32083333333333336,
+          "est_returns_k": true,
+          "confidence": 0.8,
+          "notes": [
+            "expected candidates ~= 34"
+          ]
+        }
+      ],
+      "strategies": [
+        {
+          "strategy": "exact",
+          "params": {
+            "mode": "filtered_exact"
+          },
+          "query_count": 24,
+          "recall_at_k": 1.0,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 4.010098986327648,
+            "mean": 0.167087457763652,
+            "p50": 0.16479985788464546,
+            "p95": 0.17595994286239147,
+            "p99": 0.19712810404598713
+          },
+          "notes": [
+            "filtered exact search is the recall baseline"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "params": {
+            "ef_search": 40,
+            "mode": "exact_candidate_pool"
+          },
+          "query_count": 24,
+          "recall_at_k": 0.9708333333333333,
+          "returns_k_rate": 0.8333333333333334,
+          "result_count_mean": 9.708333333333334,
+          "latency_ms": {
+            "total": 4.891800228506327,
+            "mean": 0.20382500952109694,
+            "p50": 0.18429988995194435,
+            "p95": 0.2964999992400407,
+            "p99": 0.3162622591480613
+          },
+          "notes": [
+            "simulates post-filter semantics with exact unfiltered candidates",
+            "latency is CPU exact-search time, not pgvector HNSW latency"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "params": {
+            "max_scan_tuples": 1000,
+            "mode": "exact_candidate_expansion"
+          },
+          "query_count": 24,
+          "recall_at_k": 1.0,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 6.294700317084789,
+            "mean": 0.2622791798785329,
+            "p50": 0.26050000451505184,
+            "p95": 0.27704029344022274,
+            "p99": 0.28860191348940134
+          },
+          "notes": [
+            "simulates iterative expansion with exact unfiltered candidates",
+            "latency is CPU exact-search time, not pgvector HNSW latency"
+          ]
+        }
+      ],
+      "elapsed_ms": 16.376199666410685,
+      "notes": [
+        "ground truth computed with blocked exact filtered search",
+        "postfilter and iterative rows are strategy-semantics simulations"
+      ]
+    },
+    {
+      "target_filter_selectivity": 0.3,
+      "target_correlation": 0.6,
+      "dataset": {
+        "id": "synthetic",
+        "rows": 2048,
+        "dim": 32,
+        "queries": 24,
+        "clusters": 8,
+        "query_policy": "uniform",
+        "target_filter_selectivity": 0.3,
+        "observed_filter_selectivity": 0.29443359375,
+        "correlation": 0.6,
+        "dataset_seed": 11510,
+        "query_seed": 11511
+      },
+      "ground_truth": {
+        "metric": "l2",
+        "k": 10,
+        "candidate_count": 603,
+        "block_rows": 2097152,
+        "blocks_scanned": 1,
+        "first_query_indices": [
+          1354,
+          724,
+          373,
+          1818,
+          1845,
+          1413,
+          1119,
+          226,
+          1138,
+          1083
+        ]
+      },
+      "local_selectivity": {
+        "s_global": 0.29443359375,
+        "s_local_p10": 0.011500000000000002,
+        "s_local_median": 0.05,
+        "probe_rows": 200,
+        "query_count": 24
+      },
+      "measured_best": "exact",
+      "predicted_best": "exact",
+      "prediction_match": true,
+      "predictions": [
+        {
+          "strategy": "exact",
+          "est_latency_ms": 0.4905721852800956,
+          "est_recall": 1.0,
+          "est_returns_k": true,
+          "confidence": 0.85,
+          "notes": [
+            "exact over ~603 filtered rows"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "est_latency_ms": 0.2039916968593995,
+          "est_recall": 0.014758333333333337,
+          "est_returns_k": false,
+          "confidence": 0.8,
+          "notes": [
+            "expected survivors ~= 0.46"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "est_latency_ms": 4.434602105639119,
+          "est_recall": 0.32083333333333336,
+          "est_returns_k": true,
+          "confidence": 0.8,
+          "notes": [
+            "expected candidates ~= 870"
+          ]
+        }
+      ],
+      "strategies": [
+        {
+          "strategy": "exact",
+          "params": {
+            "mode": "filtered_exact"
+          },
+          "query_count": 24,
+          "recall_at_k": 1.0,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 6.218800321221352,
+            "mean": 0.25911668005088967,
+            "p50": 0.20665000192821026,
+            "p95": 0.4685953259468078,
+            "p99": 0.5021842056885362
+          },
+          "notes": [
+            "filtered exact search is the recall baseline"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "params": {
+            "ef_search": 40,
+            "mode": "exact_candidate_pool"
+          },
+          "query_count": 24,
+          "recall_at_k": 0.4583333333333333,
+          "returns_k_rate": 0.3333333333333333,
+          "result_count_mean": 4.583333333333333,
+          "latency_ms": {
+            "total": 7.199599407613277,
+            "mean": 0.2999833086505532,
+            "p50": 0.33175013959407806,
+            "p95": 0.3868999192491173,
+            "p99": 0.3929268755018711
+          },
+          "notes": [
+            "simulates post-filter semantics with exact unfiltered candidates",
+            "latency is CPU exact-search time, not pgvector HNSW latency"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "params": {
+            "max_scan_tuples": 1000,
+            "mode": "exact_candidate_expansion"
+          },
+          "query_count": 24,
+          "recall_at_k": 1.0,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 11.966899037361145,
+            "mean": 0.49862079322338104,
+            "p50": 0.4640500992536545,
+            "p95": 0.74544467497617,
+            "p99": 0.9613631013780831
+          },
+          "notes": [
+            "simulates iterative expansion with exact unfiltered candidates",
+            "latency is CPU exact-search time, not pgvector HNSW latency"
+          ]
+        }
+      ],
+      "elapsed_ms": 27.501499745994806,
+      "notes": [
+        "ground truth computed with blocked exact filtered search",
+        "postfilter and iterative rows are strategy-semantics simulations"
+      ]
+    }
+  ],
+  "calibration": {
+    "source": "docs\\benchmarks\\synthetic-calibration.json",
+    "profile": {
+      "version": 1,
+      "dataset_id": "synthetic-readme",
+      "hardware_id": "github-readme-synthetic",
+      "index_method": "hnsw",
+      "c_d": 0.15286800790325766,
+      "c_scan": 0.15286800790325766,
+      "c_h": 4.375399843275645,
+      "delta_strict": 0.0,
+      "recall_curve": [
+        [
+          10,
+          0.075
+        ],
+        [
+          20,
+          0.1708333333333333
+        ],
+        [
+          40,
+          0.32083333333333336
+        ],
+        [
+          80,
+          0.4875
+        ],
+        [
+          160,
+          0.5750000000000001
+        ]
+      ]
+    }
+  },
+  "elapsed_ms": 414.960500318557,
+  "notes": [
+    "sweep varies global selectivity and filter/vector correlation",
+    "measured_best is lowest p95 latency among strategies meeting quality targets",
+    "local selectivity is estimated from exact unfiltered probes for every point"
+  ]
+}

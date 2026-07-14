@@ -1,5 +1,9 @@
 # VecAdvisor
 
+[![CI](https://github.com/vecadvisor/vecadvisor/actions/workflows/ci.yml/badge.svg)](https://github.com/vecadvisor/vecadvisor/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/vecadvisor/vecadvisor)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.11%2B-blue)](pyproject.toml)
+
 Cost-based CLI advisor for filtered vector search in PostgreSQL and pgvector.
 
 VecAdvisor helps answer a question PostgreSQL does not currently cost
@@ -48,6 +52,69 @@ model misses this. VecAdvisor probes a bounded unfiltered top-m
 neighborhood and costs durable recommendations against p10 local selectivity
 across representative query vectors.
 
+## Benchmark Evidence
+
+The repository includes a deterministic synthetic crossover sweep under
+`docs/benchmarks/` and a rendered chart:
+
+![Synthetic crossover chart](docs/assets/synthetic-crossover.svg)
+
+This sweep varies filter selectivity (`0.01`, `0.05`, `0.1`, `0.3`) and
+filter/vector correlation (`-0.6`, `0`, `0.6`) across 12 points. In this
+strategy-semantics simulation:
+
+- Prediction match rate: `100%`.
+- Default post-filter ANN missed recall or returns-k targets in `12/12` bins.
+- VecAdvisor avoided post-filter ANN in all post-filter failure bins.
+- Mean speedup versus post-filter ANN: `1.98x`.
+
+Reproduce the artifact:
+
+```bash
+vecadvisor calibrate \
+  --dataset synthetic \
+  --rows 2048 \
+  --dim 32 \
+  --queries 24 \
+  --clusters 8 \
+  --filter-selectivity 0.1 \
+  --correlation 0.5 \
+  --limit 10 \
+  --ef-sweep 10,20,40,80,160 \
+  --seed 410 \
+  --dataset-id synthetic-readme \
+  --hardware-id github-readme-synthetic \
+  --out docs/benchmarks/synthetic-calibration.json
+
+vecadvisor benchmark-sweep \
+  --dataset synthetic \
+  --rows 2048 \
+  --dim 32 \
+  --queries 24 \
+  --clusters 8 \
+  --filter-selectivities 0.01,0.05,0.1,0.3 \
+  --correlations -0.6,0,0.6 \
+  --limit 10 \
+  --ef-search 40 \
+  --max-scan-tuples 1000 \
+  --probe-rows 200 \
+  --calibration docs/benchmarks/synthetic-calibration.json \
+  --seed 411 \
+  --out docs/benchmarks/synthetic-sweep.json
+
+vecadvisor proof docs/benchmarks/synthetic-sweep.json \
+  --out docs/benchmarks/synthetic-proof.json
+
+vecadvisor plot-crossover docs/benchmarks/synthetic-sweep.json \
+  --out docs/assets/synthetic-crossover.svg \
+  --title "VecAdvisor synthetic crossover"
+```
+
+The current proof is synthetic and intentionally small enough to run quickly
+in a developer checkout. It validates the advisor's cost-model behavior and
+quality safeguards; it is not a replacement for workload-specific calibration
+against a production pgvector index.
+
 ## Install
 
 For local development:
@@ -56,7 +123,7 @@ For local development:
 python -m pip install -e ".[dev]"
 ```
 
-For package users once released:
+For package users once released on PyPI:
 
 ```bash
 python -m pip install vecadvisor

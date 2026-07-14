@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="1198" viewBox="0 0 1120 1198" role="img" aria-labelledby="title desc">
+<title id="title">VecAdvisor synthetic crossover</title>
+<desc id="desc">Filtered vector search crossover chart for synthetic sweep results.</desc>
+<style>
+text { font-family: "Segoe UI", Arial, sans-serif; fill: #111827; }
+.chart-title { font-size: 24px; font-weight: 700; }
+.summary, .legend, .footnote { font-size: 12px; fill: #4b5563; }
+.panel-title { font-size: 15px; font-weight: 700; }
+.axis-label, .tick { font-size: 11px; fill: #6b7280; }
+.frame { fill: #ffffff; stroke: #d1d5db; stroke-width: 1; }
+.grid { stroke: #e5e7eb; stroke-width: 1; }
+.axis { stroke: #9ca3af; stroke-width: 1; }
+.latency-line { fill: none; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.recall-line { fill: none; stroke-width: 1.4; stroke-linejoin: round;
+  stroke-linecap: round; opacity: 0.8; }
+.point { stroke: #ffffff; stroke-width: 1.4; }
+.recall-fail { stroke: #991b1b; stroke-width: 2; }
+.measured-crossover { stroke: #111827; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.predicted-crossover { stroke: #b45309; stroke-width: 1.6; stroke-dasharray: 2 4; }
+.winner-label { font-size: 10px; fill: #6b7280; }
+</style>
+<rect width="1120" height="1198" fill="#ffffff"/>
+<text class="chart-title" x="86" y="38">VecAdvisor synthetic crossover</text>
+<text class="summary" x="86" y="64">backend: synthetic  |  points: 12  |  recall target: 0.9  |  returns-k target: 1  |  prediction match: 100.0%  |  postfilter failures: 12</text>
+<circle cx="86" cy="92" r="5" fill="#2563eb"/>
+<text class="legend" x="96" y="96">exact</text>
+<circle cx="169" cy="92" r="5" fill="#dc2626"/>
+<text class="legend" x="179" y="96">postfilter</text>
+<circle cx="297" cy="92" r="5" fill="#059669"/>
+<text class="legend" x="307" y="96">iterative</text>
+<line x1="820" y1="92" x2="860" y2="92" class="measured-crossover"/>
+<text class="legend" x="868" y="96">measured crossover</text>
+<line x1="820" y1="114" x2="860" y2="114" class="predicted-crossover"/>
+<text class="legend" x="868" y="118">predicted crossover</text>
+<g class="panel" id="corr-neg0_6">
+<text class="panel-title" x="86" y="152">correlation = -0.6</text>
+<rect class="frame" x="86" y="172" width="994" height="138" rx="4"/>
+<rect class="frame" x="86" y="364" width="994" height="74" rx="4"/>
+<line class="grid" x1="86.00" y1="172" x2="86.00" y2="438"/>
+<text class="tick" text-anchor="middle" x="86.00" y="456">0.01</text>
+<line class="grid" x1="556.36" y1="172" x2="556.36" y2="438"/>
+<text class="tick" text-anchor="middle" x="556.36" y="456">0.05</text>
+<line class="grid" x1="758.93" y1="172" x2="758.93" y2="438"/>
+<text class="tick" text-anchor="middle" x="758.93" y="456">0.1</text>
+<line class="grid" x1="1080.00" y1="172" x2="1080.00" y2="438"/>
+<text class="tick" text-anchor="middle" x="1080.00" y="456">0.3</text>
+<text class="axis-label" text-anchor="end" x="1080" y="475">target selectivity</text>
+<line class="grid" x1="86" y1="310.00" x2="1080" y2="310.00"/>
+<text class="tick" text-anchor="end" x="78" y="314.00">0.1218</text>
+<line class="grid" x1="86" y1="241.00" x2="1080" y2="241.00"/>
+<text class="tick" text-anchor="end" x="78" y="245.00">0.4118</text>
+<line class="grid" x1="86" y1="172.00" x2="1080" y2="172.00"/>
+<text class="tick" text-anchor="end" x="78" y="176.00">1.392</text>
+<line class="grid" x1="86" y1="438.00" x2="1080" y2="438.00"/>
+<text class="tick" text-anchor="end" x="78" y="442.00">0.0</text>
+<line class="grid" x1="86" y1="401.00" x2="1080" y2="401.00"/>
+<text class="tick" text-anchor="end" x="78" y="405.00">0.5</text>
+<line class="grid" x1="86" y1="364.00" x2="1080" y2="364.00"/>
+<text class="tick" text-anchor="end" x="78" y="368.00">1.0</text>
+<text class="axis-label" x="18" y="192" transform="rotate(-90 18 192)">p95 latency ms</text>
+<text class="axis-label" x="28" y="386" transform="rotate(-90 28 386)">recall@k</text>
+<polyline class="latency-line" stroke="#2563eb" points="86.00,296.40 556.36,305.81 758.93,302.10 1080.00,278.81"/>
+<polyline class="recall-line" stroke="#2563eb" points="86.00,364.00 556.36,364.00 758.93,364.00 1080.00,364.00"/>
+<circle class="point" cx="86.00" cy="296.40" r="4" fill="#2563eb"><title>exact p95 0.155 ms at selectivity 0.01</title></circle>
+<circle cx="86.00" cy="364.00" r="2.8" fill="#2563eb" opacity="0.82"><title>exact recall 1</title></circle>
+<circle class="point" cx="556.36" cy="305.81" r="4" fill="#2563eb"><title>exact p95 0.131 ms at selectivity 0.05</title></circle>
+<circle cx="556.36" cy="364.00" r="2.8" fill="#2563eb" opacity="0.82"><title>exact recall 1</title></circle>
+<circle class="point" cx="758.93" cy="302.10" r="4" fill="#2563eb"><title>exact p95 0.14 ms at selectivity 0.1</title></circle>
+<circle cx="758.93" cy="364.00" r="2.8" fill="#2563eb" opacity="0.82"><title>exact recall 1</title></circle>
+<circle class="point" cx="1080.00" cy="278.81" r="4" fill="#2563eb"><title>exact p95 0.211 ms at selectivity 0.3</title></circle>
+<circle cx="1080.00" cy="364.00" r="2.8" fill="#2563eb" opacity="0.82"><title>exact recall 1</title></circle>
+<polyline class="latency-line" stroke="#dc2626" points="86.00,272.39 556.36,283.72 758.93,238.04 1080.00,278.55"/>
+<polyline class="recall-line" stroke="#dc2626" points="86.00,436.29 556.36,424.12 758.93,426.59 1080.00,402.85"/>
+<circle class="point" cx="86.00" cy="272.39" r="4" fill="#dc2626"><title>postfilter p95 0.237 ms at selectivity 0.01</title></circle>
+<circle cx="86.00" cy="436.29" r="2.8" fill="#dc2626" opacity="0.82"><title>postfilter recall 0.0231</title></circle>
+<circle class="point" cx="556.36" cy="283.72" r="4" fill="#dc2626"><title>postfilter p95 0.194 ms at selectivity 0.05</title></circle>
+<circle cx="556.36" cy="424.12" r="2.8" fill="#dc2626" opacity="0.82"><title>postfilter recall 0.188</title></circle>
+<circle class="point" cx="758.93" cy="238.04" r="4" fill="#dc2626"><title>postfilter p95 0.434 ms at selectivity 0.1</title></circle>
+<circle cx="758.93" cy="426.59" r="2.8" fill="#dc2626" opacity="0.82"><title>postfilter recall 0.154</title></circle>
+<circle class="point" cx="1080.00" cy="278.55" r="4" fill="#dc2626"><title>postfilter p95 0.212 ms at selectivity 0.3</title></circle>
+<circle cx="1080.00" cy="402.85" r="2.8" fill="#dc2626" opacity="0.82"><title>postfilter recall 0.475</title></circle>
+<polyline class="latency-line" stroke="#059669" points="86.00,172.00 556.36,218.67 758.93,250.98 1080.00,239.78"/>
+<polyline class="recall-line" stroke="#059669" points="86.00,398.94 556.36,364.00 758.93,364.00 1080.00,364.00"/>
+<circle class="point" cx="86.00" cy="172.00" r="4" fill="#059669"><title>iterative p95 1.39 ms at selectivity 0.01</title></circle>
+<circle cx="86.00" cy="398.94" r="2.8" fill="#059669" opacity="0.82"><title>iterative recall 0.528</title></circle>
+<circle class="point" cx="556.36" cy="218.67" r="4" fill="#059669"><title>iterative p95 0.611 ms at selectivity 0.05</title></circle>
+<circle cx="556.36" cy="364.00" r="2.8" fill="#059669" opacity="0.82"><title>iterative recall 1</title></circle>
+<circle class="point" cx="758.93" cy="250.98" r="4" fill="#059669"><title>iterative p95 0.345 ms at selectivity 0.1</title></circle>
+<circle cx="758.93" cy="364.00" r="2.8" fill="#059669" opacity="0.82"><title>iterative recall 1</title></circle>
+<circle class="point" cx="1080.00" cy="239.78" r="4" fill="#059669"><title>iterative p95 0.421 ms at selectivity 0.3</title></circle>
+<circle cx="1080.00" cy="364.00" r="2.8" fill="#059669" opacity="0.82"><title>iterative recall 1</title></circle>
+
+
+<text class="winner-label" x="86" y="458">winner by selectivity</text>
+<rect x="80.00" y="466" width="12" height="12" rx="2" fill="#2563eb"><title>measured winner: exact</title></rect>
+<circle cx="86.00" cy="493" r="5" fill="#2563eb" stroke="#111827" stroke-width="1"><title>predicted winner: exact</title></circle>
+<line class="recall-fail" x1="81.00" y1="505" x2="91.00" y2="515"><title>postfilter recall below target</title></line>
+<line class="recall-fail" x1="91.00" y1="505" x2="81.00" y2="515"><title>postfilter recall below target</title></line>
+<rect x="550.36" y="466" width="12" height="12" rx="2" fill="#2563eb"><title>measured winner: exact</title></rect>
+<circle cx="556.36" cy="493" r="5" fill="#2563eb" stroke="#111827" stroke-width="1"><title>predicted winner: exact</title></circle>
+<line class="recall-fail" x1="551.36" y1="505" x2="561.36" y2="515"><title>postfilter recall below target</title></line>
+<line class="recall-fail" x1="561.36" y1="505" x2="551.36" y2="515"><title>postfilter recall below target</title></line>
+<rect x="752.93" y="466" width="12" height="12" rx="2" fill="#2563eb"><title>measured winner: exact</title></rect>
+<circle cx="758.93" cy="493" r="5" fill="#2563eb" stroke="#111827" stroke-width="1"><title>predicted winner: exact</title></circle>
+<line class="recall-fail" x1="753.93" y1="505" x2="763.93" y2="515"><title>postfilter recall below target</title></line>
+<line class="recall-fail" x1="763.93" y1="505" x2="753.93" y2="515"><title>postfilter recall below target</title></line>
+<rect x="1074.00" y="466" width="12" height="12" rx="2" fill="#2563eb"><title>measured winner: exact</title></rect>
+<circle cx="1080.00" cy="493" r="5" fill="#2563eb" stroke="#111827" stroke-width="1"><title>predicted winner: exact</title></circle>
+<line class="recall-fail" x1="1075.00" y1="505" x2="1085.00" y2="515"><title>postfilter recall below target</title></line>
+<line class="recall-fail" x1="1085.00" y1="505" x2="1075.00" y2="515"><title>postfilter recall below target</title></line>
+</g>
+<g class="panel" id="corr-0_0">
+<text class="panel-title" x="86" y="492">correlation = 0</text>
+<rect class="frame" x="86" y="512" width="994" height="138" rx="4"/>
+<rect class="frame" x="86" y="704" width="994" height="74" rx="4"/>
+<line class="grid" x1="86.00" y1="512" x2="86.00" y2="778"/>
+<text class="tick" text-anchor="middle" x="86.00" y="796">0.01</text>
+<line class="grid" x1="556.36" y1="512" x2="556.36" y2="778"/>
+<text class="tick" text-anchor="middle" x="556.36" y="796">0.05</text>
+<line class="grid" x1="758.93" y1="512" x2="758.93" y2="778"/>
+<text class="tick" text-anchor="middle" x="758.93" y="796">0.1</text>
+<line class="grid" x1="1080.00" y1="512" x2="1080.00" y2="778"/>
+<text class="tick" text-anchor="middle" x="1080.00" y="796">0.3</text>
+<text class="axis-label" text-anchor="end" x="1080" y="815">target selectivity</text>
+<line class="grid" x1="86" y1="650.00" x2="1080" y2="650.00"/>
+<text class="tick" text-anchor="end" x="78" y="654.00">0.1218</text>
+<line class="grid" x1="86" y1="581.00" x2="1080" y2="581.00"/>
+<text class="tick" text-anchor="end" x="78" y="585.00">0.4118</text>
+<line class="grid" x1="86" y1="512.00" x2="1080" y2="512.00"/>
+<text class="tick" text-anchor="end" x="78" y="516.00">1.392</text>
+<line class="grid" x1="86" y1="778.00" x2="1080" y2="778.00"/>
+<text class="tick" text-anchor="end" x="78" y="782.00">0.0</text>
+<line class="grid" x1="86" y1="741.00" x2="1080" y2="741.00"/>
+<text class="tick" text-anchor="end" x="78" y="745.00">0.5</text>
+<line class="grid" x1="86" y1="704.00" x2="1080" y2="704.00"/>
+<text class="tick" text-anchor="end" x="78" y="708.00">1.0</text>
+<text class="axis-label" x="18" y="532" transform="rotate(-90 18 532)">p95 latency ms</text>
+<text class="axis-label" x="28" y="726" transform="rotate(-90 28 726)">recall@k</text>
+<polyline class="latency-line" stroke="#2563eb" points="86.00,640.97 556.36,638.53 758.93,616.79 1080.00,629.16"/>
+<polyline class="recall-line" stroke="#2563eb" points="86.00,704.00 556.36,704.00 758.93,704.00 1080.00,704.00"/>
+<circle class="point" cx="86.00" cy="640.97" r="4" fill="#2563eb"><title>exact p95 0.143 ms at selectivity 0.01</title></circle>
+<circle cx="86.00" cy="704.00" r="2.8" fill="#2563eb" opacity="0.82"><title>exact recall 1</title></circle>
+<circle class="point" cx="556.36" cy="638.53" r="4" fill="#2563eb"><title>exact p95 0.149 ms at selectivity 0.05</title></circle>
+<circle cx="556.36" cy="704.00" r="2.8" fill="#2563eb" opacity="0.82"><title>exact recall 1</title></circle>
+<circle class="point" cx="758.93" cy="616.79" r="4" fill="#2563eb"><title>exact p95 0.219 ms at selectivity 0.1</title></circle>
+<circle cx="758.93" cy="704.00" r="2.8" fill="#2563eb" opacity="0.82"><title>exact recall 1</title></circle>
+<circle class="point" cx="1080.00" cy="629.16" r="4" fill="#2563eb"><title>exact p95 0.176 ms at selectivity 0.3</title></circle>
+<circle cx="1080.00" cy="704.00" r="2.8" fill="#2563eb" opacity="0.82"><title>exact recall 1</title></circle>
+<polyline class="latency-line" stroke="#dc2626" points="86.00,614.49 556.36,547.02 758.93,624.85 1080.00,599.60"/>
+<polyline class="recall-line" stroke="#dc2626" points="86.00,774.61 556.36,765.67 758.93,744.39 1080.00,706.16"/>
+<circle class="point" cx="86.00" cy="614.49" r="4" fill="#dc2626"><title>postfilter p95 0.228 ms at selectivity 0.01</title></circle>
+<circle cx="86.00" cy="774.61" r="2.8" fill="#dc2626" opacity="0.82"><title>postfilter recall 0.0458</title></circle>
+<circle class="point" cx="556.36" cy="547.02" r="4" fill="#dc2626"><title>postfilter p95 0.75 ms at selectivity 0.05</title></circle>
+<circle cx="556.36" cy="765.67" r="2.8" fill="#dc2626" opacity="0.82"><title>postfilter recall 0.167</title></circle>
+<circle class="point" cx="758.93" cy="624.85" r="4" fill="#dc2626"><title>postfilter p95 0.19 ms at selectivity 0.1</title></circle>
+<circle cx="758.93" cy="744.39" r="2.8" fill="#dc2626" opacity="0.82"><title>postfilter recall 0.454</title></circle>
+<circle class="point" cx="1080.00" cy="599.60" r="4" fill="#dc2626"><title>postfilter p95 0.296 ms at selectivity 0.3</title></circle>
+<circle cx="1080.00" cy="706.16" r="2.8" fill="#dc2626" opacity="0.82"><title>postfilter recall 0.971</title></circle>
+<polyline class="latency-line" stroke="#059669" points="86.00,568.15 556.36,592.29 758.93,604.22 1080.00,603.45"/>
+<polyline class="recall-line" stroke="#059669" points="86.00,709.86 556.36,704.00 758.93,704.00 1080.00,704.00"/>
+<circle class="point" cx="86.00" cy="568.15" r="4" fill="#059669"><title>iterative p95 0.517 ms at selectivity 0.01</title></circle>
+<circle cx="86.00" cy="709.86" r="2.8" fill="#059669" opacity="0.82"><title>iterative recall 0.921</title></circle>
+<circle class="point" cx="556.36" cy="592.29" r="4" fill="#059669"><title>iterative p95 0.337 ms at selectivity 0.05</title></circle>
+<circle cx="556.36" cy="704.00" r="2.8" fill="#059669" opacity="0.82"><title>iterative recall 1</title></circle>
+<circle class="point" cx="758.93" cy="604.22" r="4" fill="#059669"><title>iterative p95 0.273 ms at selectivity 0.1</title></circle>
+<circle cx="758.93" cy="704.00" r="2.8" fill="#059669" opacity="0.82"><title>iterative recall 1</title></circle>
+<circle class="point" cx="1080.00" cy="603.45" r="4" fill="#059669"><title>iterative p95 0.277 ms at selectivity 0.3</title></circle>
+<circle cx="1080.00" cy="704.00" r="2.8" fill="#059669" opacity="0.82"><title>iterative recall 1</title></circle>
+
+
+<text class="winner-label" x="86" y="798">winner by selectivity</text>
+<rect x="80.00" y="806" width="12" height="12" rx="2" fill="#2563eb"><title>measured winner: exact</title></rect>
+<circle cx="86.00" cy="833" r="5" fill="#2563eb" stroke="#111827" stroke-width="1"><title>predicted winner: exact</title></circle>
+<line class="recall-fail" x1="81.00" y1="845" x2="91.00" y2="855"><title>postfilter recall below target</title></line>
+<line class="recall-fail" x1="91.00" y1="845" x2="81.00" y2="855"><title>postfilter recall below target</title></line>
+<rect x="550.36" y="806" width="12" height="12" rx="2" fill="#2563eb"><title>measured winner: exact</title></rect>
+<circle cx="556.36" cy="833" r="5" fill="#2563eb" stroke="#111827" stroke-width="1"><title>predicted winner: exact</title></circle>
+<line class="recall-fail" x1="551.36" y1="845" x2="561.36" y2="855"><title>postfilter recall below target</title></line>
+<line class="recall-fail" x1="561.36" y1="845" x2="551.36" y2="855"><title>postfilter recall below target</title></line>
+<rect x="752.93" y="806" width="12" height="12" rx="2" fill="#2563eb"><title>measured winner: exact</title></rect>
+<circle cx="758.93" cy="833" r="5" fill="#2563eb" stroke="#111827" stroke-width="1"><title>predicted winner: exact</title></circle>
+<line class="recall-fail" x1="753.93" y1="845" x2="763.93" y2="855"><title>postfilter recall below target</title></line>
+<line class="recall-fail" x1="763.93" y1="845" x2="753.93" y2="855"><title>postfilter recall below target</title></line>
+<rect x="1074.00" y="806" width="12" height="12" rx="2" fill="#2563eb"><title>measured winner: exact</title></rect>
+<circle cx="1080.00" cy="833" r="5" fill="#2563eb" stroke="#111827" stroke-width="1"><title>predicted winner: exact</title></circle>
+<line class="recall-fail" x1="1075.00" y1="845" x2="1085.00" y2="855"><title>postfilter recall below target</title></line>
+<line class="recall-fail" x1="1085.00" y1="845" x2="1075.00" y2="855"><title>postfilter recall below target</title></line>
+</g>
+<g class="panel" id="corr-0_6">
+<text class="panel-title" x="86" y="832">correlation = 0.6</text>
+<rect class="frame" x="86" y="852" width="994" height="138" rx="4"/>
+<rect class="frame" x="86" y="1044" width="994" height="74" rx="4"/>
+<line class="grid" x1="86.00" y1="852" x2="86.00" y2="1118"/>
+<text class="tick" text-anchor="middle" x="86.00" y="1136">0.01</text>
+<line class="grid" x1="556.36" y1="852" x2="556.36" y2="1118"/>
+<text class="tick" text-anchor="middle" x="556.36" y="1136">0.05</text>
+<line class="grid" x1="758.93" y1="852" x2="758.93" y2="1118"/>
+<text class="tick" text-anchor="middle" x="758.93" y="1136">0.1</text>
+<line class="grid" x1="1080.00" y1="852" x2="1080.00" y2="1118"/>
+<text class="tick" text-anchor="middle" x="1080.00" y="1136">0.3</text>
+<text class="axis-label" text-anchor="end" x="1080" y="1155">target selectivity</text>
+<line class="grid" x1="86" y1="990.00" x2="1080" y2="990.00"/>
+<text class="tick" text-anchor="end" x="78" y="994.00">0.1218</text>
+<line class="grid" x1="86" y1="921.00" x2="1080" y2="921.00"/>
+<text class="tick" text-anchor="end" x="78" y="925.00">0.4118</text>
+<line class="grid" x1="86" y1="852.00" x2="1080" y2="852.00"/>
+<text class="tick" text-anchor="end" x="78" y="856.00">1.392</text>
+<line class="grid" x1="86" y1="1118.00" x2="1080" y2="1118.00"/>
+<text class="tick" text-anchor="end" x="78" y="1122.00">0.0</text>
+<line class="grid" x1="86" y1="1081.00" x2="1080" y2="1081.00"/>
+<text class="tick" text-anchor="end" x="78" y="1085.00">0.5</text>
+<line class="grid" x1="86" y1="1044.00" x2="1080" y2="1044.00"/>
+<text class="tick" text-anchor="end" x="78" y="1048.00">1.0</text>
+<text class="axis-label" x="18" y="872" transform="rotate(-90 18 872)">p95 latency ms</text>
+<text class="axis-label" x="28" y="1066" transform="rotate(-90 28 1066)">recall@k</text>
+<polyline class="latency-line" stroke="#2563eb" points="86.00,990.00 556.36,985.27 758.93,981.32 1080.00,913.68"/>
+<polyline class="recall-line" stroke="#2563eb" points="86.00,1044.00 556.36,1044.00 758.93,1044.00 1080.00,1044.00"/>
+<circle class="point" cx="86.00" cy="990.00" r="4" fill="#2563eb"><title>exact p95 0.122 ms at selectivity 0.01</title></circle>
+<circle cx="86.00" cy="1044.00" r="2.8" fill="#2563eb" opacity="0.82"><title>exact recall 1</title></circle>
+<circle class="point" cx="556.36" cy="985.27" r="4" fill="#2563eb"><title>exact p95 0.132 ms at selectivity 0.05</title></circle>
+<circle cx="556.36" cy="1044.00" r="2.8" fill="#2563eb" opacity="0.82"><title>exact recall 1</title></circle>
+<circle class="point" cx="758.93" cy="981.32" r="4" fill="#2563eb"><title>exact p95 0.142 ms at selectivity 0.1</title></circle>
+<circle cx="758.93" cy="1044.00" r="2.8" fill="#2563eb" opacity="0.82"><title>exact recall 1</title></circle>
+<circle class="point" cx="1080.00" cy="913.68" r="4" fill="#2563eb"><title>exact p95 0.469 ms at selectivity 0.3</title></circle>
+<circle cx="1080.00" cy="1044.00" r="2.8" fill="#2563eb" opacity="0.82"><title>exact recall 1</title></circle>
+<polyline class="latency-line" stroke="#dc2626" points="86.00,916.98 556.36,956.12 758.93,964.48 1080.00,924.53"/>
+<polyline class="recall-line" stroke="#dc2626" points="86.00,1114.61 556.36,1106.90 758.93,1094.26 1080.00,1084.08"/>
+<circle class="point" cx="86.00" cy="916.98" r="4" fill="#dc2626"><title>postfilter p95 0.442 ms at selectivity 0.01</title></circle>
+<circle cx="86.00" cy="1114.61" r="2.8" fill="#dc2626" opacity="0.82"><title>postfilter recall 0.0458</title></circle>
+<circle class="point" cx="556.36" cy="956.12" r="4" fill="#dc2626"><title>postfilter p95 0.222 ms at selectivity 0.05</title></circle>
+<circle cx="556.36" cy="1106.90" r="2.8" fill="#dc2626" opacity="0.82"><title>postfilter recall 0.15</title></circle>
+<circle class="point" cx="758.93" cy="964.48" r="4" fill="#dc2626"><title>postfilter p95 0.191 ms at selectivity 0.1</title></circle>
+<circle cx="758.93" cy="1094.26" r="2.8" fill="#dc2626" opacity="0.82"><title>postfilter recall 0.321</title></circle>
+<circle class="point" cx="1080.00" cy="924.53" r="4" fill="#dc2626"><title>postfilter p95 0.387 ms at selectivity 0.3</title></circle>
+<circle cx="1080.00" cy="1084.08" r="2.8" fill="#dc2626" opacity="0.82"><title>postfilter recall 0.458</title></circle>
+<polyline class="latency-line" stroke="#059669" points="86.00,927.23 556.36,904.21 758.93,886.29 1080.00,887.39"/>
+<polyline class="recall-line" stroke="#059669" points="86.00,1056.64 556.36,1044.00 758.93,1044.00 1080.00,1044.00"/>
+<circle class="point" cx="86.00" cy="927.23" r="4" fill="#059669"><title>iterative p95 0.369 ms at selectivity 0.01</title></circle>
+<circle cx="86.00" cy="1056.64" r="2.8" fill="#059669" opacity="0.82"><title>iterative recall 0.829</title></circle>
+<circle class="point" cx="556.36" cy="904.21" r="4" fill="#059669"><title>iterative p95 0.554 ms at selectivity 0.05</title></circle>
+<circle cx="556.36" cy="1044.00" r="2.8" fill="#059669" opacity="0.82"><title>iterative recall 1</title></circle>
+<circle class="point" cx="758.93" cy="886.29" r="4" fill="#059669"><title>iterative p95 0.76 ms at selectivity 0.1</title></circle>
+<circle cx="758.93" cy="1044.00" r="2.8" fill="#059669" opacity="0.82"><title>iterative recall 1</title></circle>
+<circle class="point" cx="1080.00" cy="887.39" r="4" fill="#059669"><title>iterative p95 0.745 ms at selectivity 0.3</title></circle>
+<circle cx="1080.00" cy="1044.00" r="2.8" fill="#059669" opacity="0.82"><title>iterative recall 1</title></circle>
+
+
+<text class="winner-label" x="86" y="1138">winner by selectivity</text>
+<rect x="80.00" y="1146" width="12" height="12" rx="2" fill="#2563eb"><title>measured winner: exact</title></rect>
+<circle cx="86.00" cy="1173" r="5" fill="#2563eb" stroke="#111827" stroke-width="1"><title>predicted winner: exact</title></circle>
+<line class="recall-fail" x1="81.00" y1="1185" x2="91.00" y2="1195"><title>postfilter recall below target</title></line>
+<line class="recall-fail" x1="91.00" y1="1185" x2="81.00" y2="1195"><title>postfilter recall below target</title></line>
+<rect x="550.36" y="1146" width="12" height="12" rx="2" fill="#2563eb"><title>measured winner: exact</title></rect>
+<circle cx="556.36" cy="1173" r="5" fill="#2563eb" stroke="#111827" stroke-width="1"><title>predicted winner: exact</title></circle>
+<line class="recall-fail" x1="551.36" y1="1185" x2="561.36" y2="1195"><title>postfilter recall below target</title></line>
+<line class="recall-fail" x1="561.36" y1="1185" x2="551.36" y2="1195"><title>postfilter recall below target</title></line>
+<rect x="752.93" y="1146" width="12" height="12" rx="2" fill="#2563eb"><title>measured winner: exact</title></rect>
+<circle cx="758.93" cy="1173" r="5" fill="#2563eb" stroke="#111827" stroke-width="1"><title>predicted winner: exact</title></circle>
+<line class="recall-fail" x1="753.93" y1="1185" x2="763.93" y2="1195"><title>postfilter recall below target</title></line>
+<line class="recall-fail" x1="763.93" y1="1185" x2="753.93" y2="1195"><title>postfilter recall below target</title></line>
+<rect x="1074.00" y="1146" width="12" height="12" rx="2" fill="#2563eb"><title>measured winner: exact</title></rect>
+<circle cx="1080.00" cy="1173" r="5" fill="#2563eb" stroke="#111827" stroke-width="1"><title>predicted winner: exact</title></circle>
+<line class="recall-fail" x1="1075.00" y1="1185" x2="1085.00" y2="1195"><title>postfilter recall below target</title></line>
+<line class="recall-fail" x1="1085.00" y1="1185" x2="1075.00" y2="1195"><title>postfilter recall below target</title></line>
+</g>
+<text class="footnote" x="86" y="1180">Solid lines show p95 latency. Lower thin lines show recall@k. Squares are measured winners; circles are predicted winners.</text>
+</svg>

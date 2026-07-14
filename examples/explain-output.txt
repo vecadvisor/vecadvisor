@@ -1,0 +1,49 @@
+﻿EXPLAIN VECTOR  public.documents  (advisor_rows=32, d=3, calibration=default)
+  filter: tenant_id = 1
+  limit: 10   ef_search: 40   recall_target: 0.9
+  s(global): 0.125   s(local): 0.25   rho: 0.3333   postgres_s: 0.125   probe_rows: 16
+  planner: exact   root: Seq Scan   planning_ms: n/a
+
+  PLAN                         est.latency   est.recall   returns k   conf   note
+  -> exact                     0.000873 ms           1   yes         0.65    planner
+     postfilter                0.00444 ms         0.9   yes          0.8   ef=40, uses=documents_embedding_hnsw_idx
+     iterative_relaxed         0.00444 ms         0.9   yes          0.8   ef=40, uses=documents_embedding_hnsw_idx
+     iterative_strict          0.00532 ms         0.9   yes          0.8   ef=40, uses=documents_embedding_hnsw_idx
+
+  VERDICT: Use exact filtered scan under current estimates from local probe.
+
+  CATALOG SNAPSHOT:
+    - stats_fingerprint: da36f009c43470dc3b93b9f1   index_fingerprint: 3b062257cf3803cdea7d9747
+    - last_analyze: 2026-07-14T13:41:42.770691+00:00   changed_rows: 256
+
+  LOCAL PROBE: passing_rows=4/16   resolution_floor=0.0625   confidence=0.8
+    - only 4 filter-passing rows in local sample; local selectivity confidence is reduced
+
+  NOTES:
+    - local selectivity estimated from the unfiltered top-m vector neighborhood
+    - only 4 filter-passing rows in local sample; local selectivity confidence is reduced
+
+  COST NOTES:
+    - exact: exact over ~32 filtered rows
+    - exact: exact is the recall-safe fallback
+    - exact: uses default calibration constants
+    - postfilter: expected survivors ~= 10.00
+    - postfilter: ef_search=40 satisfies recall target 0.9 and expected survivors >= 10
+    - postfilter: local selectivity measured from query neighborhood; costing uses p10
+    - postfilter: only 4 filter-passing rows in local sample; local selectivity confidence is reduced
+    - postfilter: uses default calibration constants
+    - iterative_relaxed: expected candidates ~= 40
+    - iterative_relaxed: ef_search=40 satisfies recall target 0.9
+    - iterative_relaxed: local selectivity measured from query neighborhood; costing uses p10
+    - iterative_relaxed: only 4 filter-passing rows in local sample; local selectivity confidence is reduced
+    - iterative_relaxed: uses default calibration constants
+    - iterative_strict: expected candidates ~= 40
+    - iterative_strict: ef_search=40 satisfies recall target 0.9
+    - iterative_strict: local selectivity measured from query neighborhood; costing uses p10
+    - iterative_strict: only 4 filter-passing rows in local sample; local selectivity confidence is reduced
+    - iterative_strict: uses default calibration constants
+
+  WHY:
+    - exact is the lowest estimated-latency candidate that meets recall target 0.9 and returns k
+    - estimated 5.08x latency versus next viable strategy postfilter
+    - local selectivity is higher than global selectivity; ANN post-filtering is less risky for this query neighborhood

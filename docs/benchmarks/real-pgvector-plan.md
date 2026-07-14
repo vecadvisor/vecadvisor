@@ -65,3 +65,18 @@ The first real benchmark artifact is good enough when it produces:
 - commands that regenerate the artifact from a clean checkout
 - at least one case where local selectivity changes the recommendation versus
   a global-selectivity-only model
+
+## Current Artifact
+
+The first artifact is captured in:
+
+- `real-pgvector-benchmark.json`
+- `real-pgvector-benchmark.md`
+- `../assets/real-pgvector-pareto.svg`
+- `real-pgvector-sweep.json`
+- `../assets/real-pgvector-crossover.svg`
+
+The headline benchmark includes exact, post-filter HNSW, iterative HNSW,
+partial HNSW, and partition-pruned HNSW. The companion sweep records
+local-selectivity behavior against actual PostgreSQL/pgvector SQL and is kept
+as calibration evidence for future model improvement.

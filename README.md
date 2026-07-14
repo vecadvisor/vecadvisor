@@ -39,6 +39,12 @@ validation. It does not modify PostgreSQL's planner.
 VecAdvisor is an independent third-party tool. It works with PostgreSQL and
 pgvector, but it is not affiliated with the official pgvector project.
 
+## Documentation
+
+- [Predicate support](docs/predicates.md)
+- [Benchmark artifacts](docs/benchmarks/README.md)
+- [Release checklist](docs/release.md)
+
 ## Why Local Selectivity Matters
 
 Global selectivity is the fraction of the whole table matching a filter.
@@ -115,6 +121,18 @@ in a developer checkout. It validates the advisor's cost-model behavior and
 quality safeguards; it is not a replacement for workload-specific calibration
 against a production pgvector index.
 
+The repository also includes a small actual PostgreSQL/pgvector artifact:
+
+![Real pgvector Pareto chart](docs/assets/real-pgvector-pareto.svg)
+
+That benchmark uses the bundled `pgvector/pgvector:pg17` container with
+`4096` synthetic rows, `32` dimensions, `8` query vectors, target selectivity
+`0.05`, and correlation `-0.6`. Fixed-size HNSW post-filtering reached only
+`0.2125` recall@k and returned full `k` for `0%` of queries, while iterative,
+partial-index, and partition-pruned HNSW recovered quality. See
+[`docs/benchmarks/real-pgvector-benchmark.md`](docs/benchmarks/real-pgvector-benchmark.md)
+for commands and caveats.
+
 ## Install
 
 Install from PyPI:
@@ -168,8 +186,14 @@ vecadvisor recommend \
   --query "tenant_id = 1" \
   --q-vectors examples/query-vectors.json \
   --probe-rows 16 \
-  --max-query-vectors 3
+  --max-query-vectors 3 \
+  --format text
 ```
+
+Captured outputs:
+
+- [`examples/explain-output.txt`](examples/explain-output.txt)
+- [`examples/recommend-output.txt`](examples/recommend-output.txt)
 
 ## Local PostgreSQL
 
@@ -387,7 +411,8 @@ Important JSON fields:
 - The current release is an external CLI. It does not change PostgreSQL planner behavior.
 - Realistic public benchmark datasets are not bundled yet.
 - Calibration constants are workload and hardware dependent.
-- Predicate parsing intentionally supports a restricted safe subset of filters.
+- Predicate parsing intentionally supports a
+  [restricted safe subset of filters](docs/predicates.md).
 - 10M-scale exact ground truth is deferred to the planned C++ SIMD kernel work.
 - Postgres integration tests require a reachable PostgreSQL database with
   pgvector installed. Tests skip those cases if the database is unavailable.

@@ -871,7 +871,7 @@ def _winner_strip(
 
 def _strategy_names(points: tuple[SweepAnalysisPoint, ...]) -> tuple[str, ...]:
     seen = {summary.strategy for point in points for summary in point.strategies}
-    preferred: tuple[str, ...] = ("exact", "postfilter", "iterative")
+    preferred: tuple[str, ...] = ("exact", "postfilter", "iterative", "partial", "partition")
     ordered: list[str] = [strategy for strategy in preferred if strategy in seen]
     ordered_set = set(ordered)
     ordered.extend(sorted(strategy for strategy in seen if strategy not in ordered_set))

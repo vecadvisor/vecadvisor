@@ -12,7 +12,13 @@ from vecadvisor.bench.db_runner import (
     parse_db_strategy_list,
     run_postgres_synthetic_benchmark,
 )
-from vecadvisor.bench.runner import STRATEGY_EXACT, STRATEGY_ITERATIVE, STRATEGY_POSTFILTER
+from vecadvisor.bench.runner import (
+    STRATEGY_EXACT,
+    STRATEGY_ITERATIVE,
+    STRATEGY_PARTIAL,
+    STRATEGY_PARTITION,
+    STRATEGY_POSTFILTER,
+)
 from vecadvisor.bench.sweep import run_postgres_sweep, sweep_report_to_json
 from vecadvisor.bench.validate import run_postgres_validation
 from vecadvisor.introspect import connect
@@ -38,8 +44,14 @@ def test_parse_db_strategy_list_supports_iterative() -> None:
         STRATEGY_EXACT,
         STRATEGY_POSTFILTER,
         STRATEGY_ITERATIVE,
+        STRATEGY_PARTIAL,
+        STRATEGY_PARTITION,
     )
-    assert parse_db_strategy_list("exact, iterative") == (STRATEGY_EXACT, STRATEGY_ITERATIVE)
+    assert parse_db_strategy_list("exact, partial, partition") == (
+        STRATEGY_EXACT,
+        STRATEGY_PARTIAL,
+        STRATEGY_PARTITION,
+    )
 
     with pytest.raises(ValueError, match="unknown DB benchmark strategy"):
         parse_db_strategy_list("exact,unknown")
@@ -61,7 +73,13 @@ def test_run_postgres_synthetic_benchmark_measures_actual_sql(pg_conn: object) -
         dataset=dataset,
         queries=queries,
         k=3,
-        strategies=(STRATEGY_EXACT, STRATEGY_POSTFILTER, STRATEGY_ITERATIVE),
+        strategies=(
+            STRATEGY_EXACT,
+            STRATEGY_POSTFILTER,
+            STRATEGY_ITERATIVE,
+            STRATEGY_PARTIAL,
+            STRATEGY_PARTITION,
+        ),
         ef_search=8,
         max_scan_tuples=48,
         iterative_order="relaxed_order",
@@ -74,7 +92,13 @@ def test_run_postgres_synthetic_benchmark_measures_actual_sql(pg_conn: object) -
     assert report.dataset["id"] == "postgres-synthetic"
     assert report.dataset["rows"] == 96
     assert report.ground_truth["k"] == 3
-    assert set(metrics_by_strategy) == {STRATEGY_EXACT, STRATEGY_POSTFILTER, STRATEGY_ITERATIVE}
+    assert set(metrics_by_strategy) == {
+        STRATEGY_EXACT,
+        STRATEGY_POSTFILTER,
+        STRATEGY_ITERATIVE,
+        STRATEGY_PARTIAL,
+        STRATEGY_PARTITION,
+    }
     assert metrics_by_strategy[STRATEGY_EXACT].recall_at_k == pytest.approx(1.0)
     assert metrics_by_strategy[STRATEGY_EXACT].latency_ms_mean >= 0.0
     assert metrics_by_strategy[STRATEGY_POSTFILTER].params["ef_search"] == 8
@@ -82,6 +106,14 @@ def test_run_postgres_synthetic_benchmark_measures_actual_sql(pg_conn: object) -
     assert metrics_by_strategy[STRATEGY_ITERATIVE].params["max_scan_tuples"] == 48
     assert metrics_by_strategy[STRATEGY_ITERATIVE].params["iterative_order"] == "relaxed_order"
     assert metrics_by_strategy[STRATEGY_ITERATIVE].latency_ms_mean >= 0.0
+    assert metrics_by_strategy[STRATEGY_PARTIAL].params["mode"] == (
+        "postgres_hnsw_partial_index"
+    )
+    assert metrics_by_strategy[STRATEGY_PARTIAL].latency_ms_mean >= 0.0
+    assert metrics_by_strategy[STRATEGY_PARTITION].params["mode"] == (
+        "postgres_hnsw_partition_pruned"
+    )
+    assert metrics_by_strategy[STRATEGY_PARTITION].latency_ms_mean >= 0.0
     assert any("actual PostgreSQL" in note for note in report.notes)
 
 

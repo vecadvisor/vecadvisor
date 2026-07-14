@@ -14,6 +14,8 @@ from .groundtruth import ExactTopKResult, exact_topk, recall_at_k
 STRATEGY_EXACT = "exact"
 STRATEGY_POSTFILTER = "postfilter"
 STRATEGY_ITERATIVE = "iterative"
+STRATEGY_PARTIAL = "partial"
+STRATEGY_PARTITION = "partition"
 DEFAULT_STRATEGIES = (STRATEGY_EXACT, STRATEGY_POSTFILTER, STRATEGY_ITERATIVE)
 OUTPUT_FORMATS = {"json", "csv"}
 

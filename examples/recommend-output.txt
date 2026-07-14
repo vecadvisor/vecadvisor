@@ -1,0 +1,54 @@
+﻿EXPLAIN VECTOR  public.documents  (advisor_rows=32, d=3, calibration=default)
+  filter: tenant_id = 1
+  limit: 10   ef_search: 40   recall_target: 0.9
+  s(global): 0.125   s(local): 0.0875   rho: -0.1765   postgres_s: 0.125   probe_rows: 48
+  planner: exact   root: Seq Scan   planning_ms: n/a
+
+  PLAN                         est.latency   est.recall   returns k   conf   note
+  -> exact                     0.000873 ms           1   yes         0.65    planner
+     iterative_relaxed          0.0127 ms         0.9   yes         0.1125   ef=40, uses=documents_embedding_hnsw_idx
+     postfilter                 0.0128 ms      0.9631   yes         0.1125   ef=115, uses=documents_embedding_hnsw_idx
+     iterative_strict           0.0152 ms         0.9   yes         0.1125   ef=40, uses=documents_embedding_hnsw_idx
+
+  VERDICT: Use exact filtered scan under current estimates from local probe.
+
+  CATALOG SNAPSHOT:
+    - stats_fingerprint: da36f009c43470dc3b93b9f1   index_fingerprint: 3b062257cf3803cdea7d9747
+    - last_analyze: 2026-07-14T13:41:42.770691+00:00   changed_rows: 256
+
+  LOCAL PROBE: passing_rows=8/48   resolution_floor=0.0625   confidence=0.1125
+    - local selectivity aggregated from 3 representative query vectors; costing uses p10 local selectivity
+    - fewer than 16 representative query vectors supplied; durable recommendation confidence is reduced
+
+  NOTES:
+    - representative query vector source: file:examples\query-vectors.json
+    - durable recommendation uses p10 local selectivity across the vector sample
+    - local selectivity aggregated from 3 representative query vectors; costing uses p10 local selectivity
+    - fewer than 16 representative query vectors supplied; durable recommendation confidence is reduced
+
+  COST NOTES:
+    - exact: exact over ~32 filtered rows
+    - exact: exact is the recall-safe fallback
+    - exact: uses default calibration constants
+    - iterative_relaxed: expected candidates ~= 114
+    - iterative_relaxed: ef_search=40 satisfies recall target 0.9
+    - iterative_relaxed: local selectivity measured from query neighborhood; costing uses p10
+    - iterative_relaxed: local selectivity aggregated from 3 representative query vectors; costing uses p10 local selectivity
+    - iterative_relaxed: fewer than 16 representative query vectors supplied; durable recommendation confidence is reduced
+    - iterative_relaxed: uses default calibration constants
+    - postfilter: expected survivors ~= 10.06
+    - postfilter: ef_search raised from 40 to 115 to satisfy recall target 0.9 and survivor ef >= 115
+    - postfilter: local selectivity measured from query neighborhood; costing uses p10
+    - postfilter: local selectivity aggregated from 3 representative query vectors; costing uses p10 local selectivity
+    - postfilter: fewer than 16 representative query vectors supplied; durable recommendation confidence is reduced
+    - postfilter: uses default calibration constants
+    - iterative_strict: expected candidates ~= 114
+    - iterative_strict: ef_search=40 satisfies recall target 0.9
+    - iterative_strict: local selectivity measured from query neighborhood; costing uses p10
+    - iterative_strict: local selectivity aggregated from 3 representative query vectors; costing uses p10 local selectivity
+    - iterative_strict: fewer than 16 representative query vectors supplied; durable recommendation confidence is reduced
+    - iterative_strict: uses default calibration constants
+
+  WHY:
+    - exact is the lowest estimated-latency candidate that meets recall target 0.9 and returns k
+    - estimated 14.5x latency versus next viable strategy iterative_relaxed

@@ -3,6 +3,9 @@
 This directory contains a tiny pgvector demo table and query-vector inputs for
 the README commands.
 
+Predicate examples and parser limits are documented in
+[`docs/predicates.md`](../docs/predicates.md).
+
 Start PostgreSQL:
 
 ```bash
@@ -35,6 +38,8 @@ vecadvisor explain \
   --format text
 ```
 
+Sample output: [`explain-output.txt`](explain-output.txt)
+
 Run a durable recommendation:
 
 ```bash
@@ -46,5 +51,8 @@ vecadvisor recommend \
   --q-vectors examples/query-vectors.json \
   --probe-rows 16 \
   --max-query-vectors 3 \
-  --local-cache-dir .vecadvisor-cache
+  --local-cache-dir .vecadvisor-cache \
+  --format text
 ```
+
+Sample output: [`recommend-output.txt`](recommend-output.txt)

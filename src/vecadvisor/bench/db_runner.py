@@ -8,19 +8,27 @@ from typing import Any
 from psycopg import Connection
 
 from ..local_probe import vector_literal
-from ..pgversion import load_pg_capabilities
+from ..pgversion import load_pg_capabilities, pg_capabilities_to_json
 from ..query_spec import quote_identifier
 from .datasets import SyntheticDataset, SyntheticQueries
 from .groundtruth import exact_topk
 from .runner import (
     STRATEGY_EXACT,
     STRATEGY_ITERATIVE,
+    STRATEGY_PARTIAL,
+    STRATEGY_PARTITION,
     STRATEGY_POSTFILTER,
     BenchmarkReport,
     strategy_metrics_from_indices,
 )
 
-DB_STRATEGIES = (STRATEGY_EXACT, STRATEGY_POSTFILTER, STRATEGY_ITERATIVE)
+DB_STRATEGIES = (
+    STRATEGY_EXACT,
+    STRATEGY_POSTFILTER,
+    STRATEGY_ITERATIVE,
+    STRATEGY_PARTIAL,
+    STRATEGY_PARTITION,
+)
 ITERATIVE_ORDERS = {"relaxed_order", "strict_order"}
 METRIC_SQL = {
     "l2": ("<->", "vector_l2_ops"),
@@ -180,6 +188,78 @@ def run_postgres_synthetic_benchmark(
                 notes=("actual PostgreSQL/pgvector HNSW iterative scan SQL",),
             )
         )
+    if STRATEGY_PARTIAL in strategies:
+        _create_partial_hnsw_index(
+            conn,
+            table_name=table_name,
+            opclass=opclass,
+            hnsw_m=hnsw_m,
+            hnsw_ef_construction=hnsw_ef_construction,
+            statement_timeout_ms=statement_timeout_ms,
+        )
+        partial_indices, partial_latencies = _run_partial_sql(
+            conn,
+            table_name=table_name,
+            queries=queries.vectors,
+            k=k,
+            distance_op=distance_op,
+            ef_search=ef_search,
+            statement_timeout_ms=statement_timeout_ms,
+        )
+        metrics.append(
+            strategy_metrics_from_indices(
+                strategy=STRATEGY_PARTIAL,
+                params={
+                    "mode": "postgres_hnsw_partial_index",
+                    "ef_search": ef_search,
+                    "hnsw_m": hnsw_m,
+                    "hnsw_ef_construction": hnsw_ef_construction,
+                    "predicate": "passes_filter",
+                },
+                truth_indices=truth.indices,
+                candidate_indices=partial_indices,
+                latencies_ms=partial_latencies,
+                k=k,
+                notes=("actual PostgreSQL/pgvector partial HNSW index SQL",),
+            )
+        )
+    if STRATEGY_PARTITION in strategies:
+        partition_table_name = f"{table_name}_part"
+        _load_partitioned_synthetic_table(
+            conn,
+            table_name=partition_table_name,
+            dataset=dataset,
+            opclass=opclass,
+            hnsw_m=hnsw_m,
+            hnsw_ef_construction=hnsw_ef_construction,
+            statement_timeout_ms=statement_timeout_ms,
+        )
+        partition_indices, partition_latencies = _run_partition_sql(
+            conn,
+            table_name=partition_table_name,
+            queries=queries.vectors,
+            k=k,
+            distance_op=distance_op,
+            ef_search=ef_search,
+            statement_timeout_ms=statement_timeout_ms,
+        )
+        metrics.append(
+            strategy_metrics_from_indices(
+                strategy=STRATEGY_PARTITION,
+                params={
+                    "mode": "postgres_hnsw_partition_pruned",
+                    "ef_search": ef_search,
+                    "hnsw_m": hnsw_m,
+                    "hnsw_ef_construction": hnsw_ef_construction,
+                    "partition_key": "passes_filter",
+                },
+                truth_indices=truth.indices,
+                candidate_indices=partition_indices,
+                latencies_ms=partition_latencies,
+                k=k,
+                notes=("actual PostgreSQL partition-pruned pgvector HNSW SQL",),
+            )
+        )
 
     elapsed_ms = (time.perf_counter() - started) * 1000.0
     return BenchmarkReport(
@@ -196,6 +276,7 @@ def run_postgres_synthetic_benchmark(
             "dataset_seed": dataset.seed,
             "query_seed": queries.seed,
             "temp_table": table_name,
+            "postgres": pg_capabilities_to_json(capabilities),
         },
         ground_truth={
             "metric": truth.metric,
@@ -213,6 +294,8 @@ def run_postgres_synthetic_benchmark(
             "benchmark measured actual PostgreSQL/pgvector SQL execution",
             "ground truth still comes from blocked exact in-process computation",
             "iterative requires pgvector >= 0.8.0 when selected",
+            "partial strategy builds a session-local partial HNSW index",
+            "partition strategy builds a session-local list-partitioned table",
             "temporary benchmark table is session-local and discarded on disconnect",
         ),
     )
@@ -266,6 +349,84 @@ def _load_synthetic_table(
         conn.execute(f"ANALYZE {table_sql}")
 
 
+def _create_partial_hnsw_index(
+    conn: Connection[Any],
+    *,
+    table_name: str,
+    opclass: str,
+    hnsw_m: int,
+    hnsw_ef_construction: int,
+    statement_timeout_ms: int,
+) -> None:
+    table_sql = quote_identifier(table_name)
+    index_sql = quote_identifier(f"{table_name}_embedding_partial_hnsw_idx")
+    with conn.transaction():
+        _set_common_timeout(conn, statement_timeout_ms)
+        conn.execute(f"DROP INDEX IF EXISTS {index_sql}")
+        conn.execute(
+            f"CREATE INDEX {index_sql} ON {table_sql} "
+            f"USING hnsw (embedding {opclass}) "
+            f"WITH (m = {hnsw_m}, ef_construction = {hnsw_ef_construction}) "
+            "WHERE passes_filter"
+        )
+        conn.execute(f"ANALYZE {table_sql}")
+
+
+def _load_partitioned_synthetic_table(
+    conn: Connection[Any],
+    *,
+    table_name: str,
+    dataset: SyntheticDataset,
+    opclass: str,
+    hnsw_m: int,
+    hnsw_ef_construction: int,
+    statement_timeout_ms: int,
+) -> None:
+    table_sql = quote_identifier(table_name)
+    true_table_sql = quote_identifier(f"{table_name}_true")
+    false_table_sql = quote_identifier(f"{table_name}_false")
+    true_index_sql = quote_identifier(f"{table_name}_true_embedding_hnsw_idx")
+    with conn.transaction():
+        conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
+        _set_common_timeout(conn, statement_timeout_ms)
+        conn.execute(f"DROP TABLE IF EXISTS {table_sql}")
+        conn.execute(
+            f"CREATE TEMP TABLE {table_sql} ("
+            "id integer NOT NULL, "
+            "passes_filter boolean NOT NULL, "
+            f"embedding vector({dataset.dim}) NOT NULL"
+            ") PARTITION BY LIST (passes_filter)"
+        )
+        conn.execute(
+            f"CREATE TEMP TABLE {true_table_sql} "
+            f"PARTITION OF {table_sql} FOR VALUES IN (true)"
+        )
+        conn.execute(
+            f"CREATE TEMP TABLE {false_table_sql} "
+            f"PARTITION OF {table_sql} FOR VALUES IN (false)"
+        )
+        rows = (
+            (
+                row_id,
+                bool(dataset.filter_mask[row_id]),
+                _pgvector_literal(dataset.vectors[row_id]),
+            )
+            for row_id in range(dataset.n_rows)
+        )
+        with conn.cursor() as cursor:
+            cursor.executemany(
+                f"INSERT INTO {table_sql} (id, passes_filter, embedding) "
+                "VALUES (%s, %s, %s::vector)",
+                rows,
+            )
+        conn.execute(
+            f"CREATE INDEX {true_index_sql} ON {true_table_sql} "
+            f"USING hnsw (embedding {opclass}) "
+            f"WITH (m = {hnsw_m}, ef_construction = {hnsw_ef_construction})"
+        )
+        conn.execute(f"ANALYZE {table_sql}")
+
+
 def _run_exact_sql(
     conn: Connection[Any],
     *,
@@ -298,6 +459,81 @@ def _run_exact_sql(
 
 
 def _run_postfilter_sql(
+    conn: Connection[Any],
+    *,
+    table_name: str,
+    queries: Any,
+    k: int,
+    distance_op: str,
+    ef_search: int,
+    statement_timeout_ms: int,
+) -> tuple[Any, tuple[float, ...]]:
+    np = _numpy()
+    table_sql = quote_identifier(table_name)
+    result_ids = np.full((int(queries.shape[0]), k), -1, dtype="int64")
+    latencies_ms: list[float] = []
+    sql = (
+        f"SELECT id FROM {table_sql} "
+        "WHERE passes_filter "
+        f"ORDER BY embedding {distance_op} %s::vector "
+        "LIMIT %s"
+    )
+    with conn.transaction():
+        _set_common_timeout(conn, statement_timeout_ms)
+        conn.execute("SELECT set_config('enable_seqscan', 'off', true)")
+        conn.execute("SELECT set_config('hnsw.ef_search', %s, true)", (str(ef_search),))
+        conn.execute("SELECT set_config('hnsw.iterative_scan', 'off', true)")
+        for query_index in range(int(queries.shape[0])):
+            started = time.perf_counter()
+            rows = conn.execute(sql, (_pgvector_literal(queries[query_index]), k)).fetchall()
+            latencies_ms.append((time.perf_counter() - started) * 1000.0)
+            _store_ids(result_ids, query_index, _row_ids(rows))
+    return result_ids, tuple(latencies_ms)
+
+
+def _run_partial_sql(
+    conn: Connection[Any],
+    *,
+    table_name: str,
+    queries: Any,
+    k: int,
+    distance_op: str,
+    ef_search: int,
+    statement_timeout_ms: int,
+) -> tuple[Any, tuple[float, ...]]:
+    return _run_filtered_hnsw_sql(
+        conn,
+        table_name=table_name,
+        queries=queries,
+        k=k,
+        distance_op=distance_op,
+        ef_search=ef_search,
+        statement_timeout_ms=statement_timeout_ms,
+    )
+
+
+def _run_partition_sql(
+    conn: Connection[Any],
+    *,
+    table_name: str,
+    queries: Any,
+    k: int,
+    distance_op: str,
+    ef_search: int,
+    statement_timeout_ms: int,
+) -> tuple[Any, tuple[float, ...]]:
+    return _run_filtered_hnsw_sql(
+        conn,
+        table_name=table_name,
+        queries=queries,
+        k=k,
+        distance_op=distance_op,
+        ef_search=ef_search,
+        statement_timeout_ms=statement_timeout_ms,
+    )
+
+
+def _run_filtered_hnsw_sql(
     conn: Connection[Any],
     *,
     table_name: str,

@@ -1,0 +1,744 @@
+{
+  "sweep": {
+    "backend": "postgres",
+    "points": 4,
+    "rows": 1024,
+    "dim": 16,
+    "queries": 6,
+    "clusters": 8,
+    "limit": 10,
+    "metric": "l2",
+    "ef_search": 40,
+    "max_scan_tuples": 512,
+    "probe_rows": 128,
+    "recall_target": 0.9,
+    "returns_k_target": 1.0,
+    "block_rows": 256,
+    "query_policy": "uniform",
+    "iterative_order": "relaxed_order",
+    "hnsw_m": 8,
+    "hnsw_ef_construction": 32,
+    "statement_timeout_ms": 30000,
+    "seed": 621,
+    "filter_selectivities": [
+      0.05,
+      0.2
+    ],
+    "correlations": [
+      -0.6,
+      0.6
+    ]
+  },
+  "points": [
+    {
+      "target_filter_selectivity": 0.05,
+      "target_correlation": -0.6,
+      "dataset": {
+        "id": "postgres-synthetic",
+        "rows": 1024,
+        "dim": 16,
+        "queries": 6,
+        "clusters": 8,
+        "query_policy": "uniform",
+        "target_filter_selectivity": 0.05,
+        "observed_filter_selectivity": 0.044921875,
+        "correlation": -0.6,
+        "dataset_seed": 621,
+        "query_seed": 622,
+        "temp_table": "vecadvisor_db_bench_298348",
+        "postgres": {
+          "server_version": "17.10 (Debian 17.10-1.pgdg12+1)",
+          "server_version_num": 170010,
+          "pgvector_installed": true,
+          "pgvector_version": "0.8.4",
+          "supports_hnsw_iterative_scan": true,
+          "supports_hnsw_max_scan_tuples": true,
+          "notes": [
+            "pgvector iterative scan GUCs are available"
+          ]
+        }
+      },
+      "ground_truth": {
+        "metric": "l2",
+        "k": 10,
+        "candidate_count": 46,
+        "block_rows": 256,
+        "blocks_scanned": 4,
+        "first_query_indices": [
+          223,
+          615,
+          659,
+          56,
+          564,
+          314,
+          852,
+          782,
+          443,
+          991
+        ]
+      },
+      "local_selectivity": {
+        "s_global": 0.044921875,
+        "s_local_p10": 0.0,
+        "s_local_median": 0.0,
+        "probe_rows": 128,
+        "query_count": 6
+      },
+      "measured_best": "exact",
+      "predicted_best": "exact",
+      "prediction_match": true,
+      "predictions": [
+        {
+          "strategy": "exact",
+          "est_latency_ms": 0.5437216050421149,
+          "est_recall": 1.0,
+          "est_returns_k": true,
+          "confidence": 0.85,
+          "notes": [
+            "exact over ~46 filtered rows"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "est_latency_ms": 22.57505020437141,
+          "est_recall": 0.0,
+          "est_returns_k": false,
+          "confidence": 0.8,
+          "notes": [
+            "expected survivors ~= 0.00"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "est_latency_ms": 5643762551092.852,
+          "est_recall": 0.0,
+          "est_returns_k": false,
+          "confidence": 0.8,
+          "notes": [
+            "expected candidates ~= 10000000000000"
+          ]
+        }
+      ],
+      "strategies": [
+        {
+          "strategy": "exact",
+          "params": {
+            "mode": "postgres_filtered_exact"
+          },
+          "query_count": 6,
+          "recall_at_k": 1.0,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 4.74420003592968,
+            "mean": 0.7907000059882799,
+            "p50": 0.6846000906080008,
+            "p95": 1.139074913226068,
+            "p99": 1.1878949357196689
+          },
+          "notes": [
+            "actual PostgreSQL filtered exact SQL; vector index disabled"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "params": {
+            "mode": "postgres_hnsw_postfilter",
+            "ef_search": 40,
+            "hnsw_m": 8,
+            "hnsw_ef_construction": 32
+          },
+          "query_count": 6,
+          "recall_at_k": 0.0,
+          "returns_k_rate": 0.0,
+          "result_count_mean": 0.0,
+          "latency_ms": {
+            "total": 274.04349902644753,
+            "mean": 45.67391650440792,
+            "p50": 20.904349628835917,
+            "p95": 131.28179998602718,
+            "p99": 159.59924000781032
+          },
+          "notes": [
+            "actual PostgreSQL/pgvector HNSW SQL with scalar post-filter"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "params": {
+            "mode": "postgres_hnsw_iterative",
+            "ef_search": 40,
+            "max_scan_tuples": 512,
+            "iterative_order": "relaxed_order",
+            "hnsw_m": 8,
+            "hnsw_ef_construction": 32
+          },
+          "query_count": 6,
+          "recall_at_k": 0.48333333333333334,
+          "returns_k_rate": 0.3333333333333333,
+          "result_count_mean": 6.333333333333333,
+          "latency_ms": {
+            "total": 135.19619964063168,
+            "mean": 22.532699940105278,
+            "p50": 22.33049995265901,
+            "p95": 25.066025089472532,
+            "p99": 25.68648522719741
+          },
+          "notes": [
+            "actual PostgreSQL/pgvector HNSW iterative scan SQL"
+          ]
+        }
+      ],
+      "elapsed_ms": 601.6911999322474,
+      "notes": [
+        "benchmark measured actual PostgreSQL/pgvector SQL execution",
+        "ground truth still comes from blocked exact in-process computation",
+        "iterative requires pgvector >= 0.8.0 when selected",
+        "partial strategy builds a session-local partial HNSW index",
+        "partition strategy builds a session-local list-partitioned table",
+        "temporary benchmark table is session-local and discarded on disconnect"
+      ]
+    },
+    {
+      "target_filter_selectivity": 0.05,
+      "target_correlation": 0.6,
+      "dataset": {
+        "id": "postgres-synthetic",
+        "rows": 1024,
+        "dim": 16,
+        "queries": 6,
+        "clusters": 8,
+        "query_policy": "uniform",
+        "target_filter_selectivity": 0.05,
+        "observed_filter_selectivity": 0.0595703125,
+        "correlation": 0.6,
+        "dataset_seed": 1630,
+        "query_seed": 1631,
+        "temp_table": "vecadvisor_db_bench_298348",
+        "postgres": {
+          "server_version": "17.10 (Debian 17.10-1.pgdg12+1)",
+          "server_version_num": 170010,
+          "pgvector_installed": true,
+          "pgvector_version": "0.8.4",
+          "supports_hnsw_iterative_scan": true,
+          "supports_hnsw_max_scan_tuples": true,
+          "notes": [
+            "pgvector iterative scan GUCs are available"
+          ]
+        }
+      },
+      "ground_truth": {
+        "metric": "l2",
+        "k": 10,
+        "candidate_count": 61,
+        "block_rows": 256,
+        "blocks_scanned": 4,
+        "first_query_indices": [
+          688,
+          970,
+          460,
+          467,
+          657,
+          918,
+          146,
+          666,
+          213,
+          820
+        ]
+      },
+      "local_selectivity": {
+        "s_global": 0.0595703125,
+        "s_local_p10": 0.00390625,
+        "s_local_median": 0.0390625,
+        "probe_rows": 128,
+        "query_count": 6
+      },
+      "measured_best": "iterative",
+      "predicted_best": "exact",
+      "prediction_match": false,
+      "predictions": [
+        {
+          "strategy": "exact",
+          "est_latency_ms": 0.7210221284254132,
+          "est_recall": 1.0,
+          "est_returns_k": true,
+          "confidence": 0.85,
+          "notes": [
+            "exact over ~61 filtered rows"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "est_latency_ms": 22.57505020437141,
+          "est_recall": 0.0028645833333333336,
+          "est_returns_k": false,
+          "confidence": 0.8,
+          "notes": [
+            "expected survivors ~= 0.16"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "est_latency_ms": 1444.80321307977,
+          "est_recall": 0.036666666666666674,
+          "est_returns_k": false,
+          "confidence": 0.8,
+          "notes": [
+            "expected candidates ~= 2560"
+          ]
+        }
+      ],
+      "strategies": [
+        {
+          "strategy": "exact",
+          "params": {
+            "mode": "postgres_filtered_exact"
+          },
+          "query_count": 6,
+          "recall_at_k": 0.9500000000000001,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 142.9176996462047,
+            "mean": 23.819616607700784,
+            "p50": 24.186050053685904,
+            "p95": 24.6148748556152,
+            "p99": 24.70681492704898
+          },
+          "notes": [
+            "actual PostgreSQL filtered exact SQL; vector index disabled"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "params": {
+            "mode": "postgres_hnsw_postfilter",
+            "ef_search": 40,
+            "hnsw_m": 8,
+            "hnsw_ef_construction": 32
+          },
+          "query_count": 6,
+          "recall_at_k": 0.26666666666666666,
+          "returns_k_rate": 0.0,
+          "result_count_mean": 2.6666666666666665,
+          "latency_ms": {
+            "total": 124.61589928716421,
+            "mean": 20.7693165478607,
+            "p50": 21.013000048696995,
+            "p95": 21.35547494981438,
+            "p99": 21.420054999180138
+          },
+          "notes": [
+            "actual PostgreSQL/pgvector HNSW SQL with scalar post-filter"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "params": {
+            "mode": "postgres_hnsw_iterative",
+            "ef_search": 40,
+            "max_scan_tuples": 512,
+            "iterative_order": "relaxed_order",
+            "hnsw_m": 8,
+            "hnsw_ef_construction": 32
+          },
+          "query_count": 6,
+          "recall_at_k": 0.9500000000000001,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 136.69159961864352,
+            "mean": 22.78193326977392,
+            "p50": 22.552449954673648,
+            "p95": 24.539724923670292,
+            "p99": 24.602984823286533
+          },
+          "notes": [
+            "actual PostgreSQL/pgvector HNSW iterative scan SQL"
+          ]
+        }
+      ],
+      "elapsed_ms": 604.7558002173901,
+      "notes": [
+        "benchmark measured actual PostgreSQL/pgvector SQL execution",
+        "ground truth still comes from blocked exact in-process computation",
+        "iterative requires pgvector >= 0.8.0 when selected",
+        "partial strategy builds a session-local partial HNSW index",
+        "partition strategy builds a session-local list-partitioned table",
+        "temporary benchmark table is session-local and discarded on disconnect"
+      ]
+    },
+    {
+      "target_filter_selectivity": 0.2,
+      "target_correlation": -0.6,
+      "dataset": {
+        "id": "postgres-synthetic",
+        "rows": 1024,
+        "dim": 16,
+        "queries": 6,
+        "clusters": 8,
+        "query_policy": "uniform",
+        "target_filter_selectivity": 0.2,
+        "observed_filter_selectivity": 0.2138671875,
+        "correlation": -0.6,
+        "dataset_seed": 2639,
+        "query_seed": 2640,
+        "temp_table": "vecadvisor_db_bench_298348",
+        "postgres": {
+          "server_version": "17.10 (Debian 17.10-1.pgdg12+1)",
+          "server_version_num": 170010,
+          "pgvector_installed": true,
+          "pgvector_version": "0.8.4",
+          "supports_hnsw_iterative_scan": true,
+          "supports_hnsw_max_scan_tuples": true,
+          "notes": [
+            "pgvector iterative scan GUCs are available"
+          ]
+        }
+      },
+      "ground_truth": {
+        "metric": "l2",
+        "k": 10,
+        "candidate_count": 219,
+        "block_rows": 256,
+        "blocks_scanned": 4,
+        "first_query_indices": [
+          569,
+          398,
+          549,
+          872,
+          71,
+          540,
+          372,
+          20,
+          370,
+          205
+        ]
+      },
+      "local_selectivity": {
+        "s_global": 0.2138671875,
+        "s_local_p10": 0.09375,
+        "s_local_median": 0.484375,
+        "probe_rows": 128,
+        "query_count": 6
+      },
+      "measured_best": "iterative",
+      "predicted_best": "exact",
+      "prediction_match": false,
+      "predictions": [
+        {
+          "strategy": "exact",
+          "est_latency_ms": 2.588587641396156,
+          "est_recall": 1.0,
+          "est_returns_k": true,
+          "confidence": 0.85,
+          "notes": [
+            "exact over ~219 filtered rows"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "est_latency_ms": 22.57505020437141,
+          "est_recall": 0.06875,
+          "est_returns_k": false,
+          "confidence": 0.8,
+          "notes": [
+            "expected survivors ~= 3.75"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "est_latency_ms": 60.20013387832376,
+          "est_recall": 0.18333333333333335,
+          "est_returns_k": true,
+          "confidence": 0.8,
+          "notes": [
+            "expected candidates ~= 107"
+          ]
+        }
+      ],
+      "strategies": [
+        {
+          "strategy": "exact",
+          "params": {
+            "mode": "postgres_filtered_exact"
+          },
+          "query_count": 6,
+          "recall_at_k": 1.0,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 143.25570035725832,
+            "mean": 23.875950059543054,
+            "p50": 23.811500053852797,
+            "p95": 25.731650064699352,
+            "p99": 25.757850124500692
+          },
+          "notes": [
+            "actual PostgreSQL filtered exact SQL; vector index disabled"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "params": {
+            "mode": "postgres_hnsw_postfilter",
+            "ef_search": 40,
+            "hnsw_m": 8,
+            "hnsw_ef_construction": 32
+          },
+          "query_count": 6,
+          "recall_at_k": 0.7000000000000001,
+          "returns_k_rate": 0.6666666666666666,
+          "result_count_mean": 7.0,
+          "latency_ms": {
+            "total": 151.86760015785694,
+            "mean": 25.311266692976158,
+            "p50": 24.645149940624833,
+            "p95": 28.44197500962764,
+            "p99": 28.73599494341761
+          },
+          "notes": [
+            "actual PostgreSQL/pgvector HNSW SQL with scalar post-filter"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "params": {
+            "mode": "postgres_hnsw_iterative",
+            "ef_search": 40,
+            "max_scan_tuples": 512,
+            "iterative_order": "relaxed_order",
+            "hnsw_m": 8,
+            "hnsw_ef_construction": 32
+          },
+          "query_count": 6,
+          "recall_at_k": 1.0,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 135.72970079258084,
+            "mean": 22.621616798763473,
+            "p50": 22.290450055152178,
+            "p95": 24.054225301370025,
+            "p99": 24.166765389963984
+          },
+          "notes": [
+            "actual PostgreSQL/pgvector HNSW iterative scan SQL"
+          ]
+        }
+      ],
+      "elapsed_ms": 637.4865001998842,
+      "notes": [
+        "benchmark measured actual PostgreSQL/pgvector SQL execution",
+        "ground truth still comes from blocked exact in-process computation",
+        "iterative requires pgvector >= 0.8.0 when selected",
+        "partial strategy builds a session-local partial HNSW index",
+        "partition strategy builds a session-local list-partitioned table",
+        "temporary benchmark table is session-local and discarded on disconnect"
+      ]
+    },
+    {
+      "target_filter_selectivity": 0.2,
+      "target_correlation": 0.6,
+      "dataset": {
+        "id": "postgres-synthetic",
+        "rows": 1024,
+        "dim": 16,
+        "queries": 6,
+        "clusters": 8,
+        "query_policy": "uniform",
+        "target_filter_selectivity": 0.2,
+        "observed_filter_selectivity": 0.1953125,
+        "correlation": 0.6,
+        "dataset_seed": 3648,
+        "query_seed": 3649,
+        "temp_table": "vecadvisor_db_bench_298348",
+        "postgres": {
+          "server_version": "17.10 (Debian 17.10-1.pgdg12+1)",
+          "server_version_num": 170010,
+          "pgvector_installed": true,
+          "pgvector_version": "0.8.4",
+          "supports_hnsw_iterative_scan": true,
+          "supports_hnsw_max_scan_tuples": true,
+          "notes": [
+            "pgvector iterative scan GUCs are available"
+          ]
+        }
+      },
+      "ground_truth": {
+        "metric": "l2",
+        "k": 10,
+        "candidate_count": 200,
+        "block_rows": 256,
+        "blocks_scanned": 4,
+        "first_query_indices": [
+          653,
+          416,
+          530,
+          740,
+          286,
+          297,
+          668,
+          511,
+          623,
+          667
+        ]
+      },
+      "local_selectivity": {
+        "s_global": 0.1953125,
+        "s_local_p10": 0.0078125,
+        "s_local_median": 0.07421875,
+        "probe_rows": 128,
+        "query_count": 6
+      },
+      "measured_best": "exact",
+      "predicted_best": "exact",
+      "prediction_match": true,
+      "predictions": [
+        {
+          "strategy": "exact",
+          "est_latency_ms": 2.364006978443978,
+          "est_recall": 1.0,
+          "est_returns_k": true,
+          "confidence": 0.85,
+          "notes": [
+            "exact over ~200 filtered rows"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "est_latency_ms": 22.57505020437141,
+          "est_recall": 0.005729166666666667,
+          "est_returns_k": false,
+          "confidence": 0.8,
+          "notes": [
+            "expected survivors ~= 0.31"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "est_latency_ms": 722.401606539885,
+          "est_recall": 0.07333333333333335,
+          "est_returns_k": false,
+          "confidence": 0.8,
+          "notes": [
+            "expected candidates ~= 1280"
+          ]
+        }
+      ],
+      "strategies": [
+        {
+          "strategy": "exact",
+          "params": {
+            "mode": "postgres_filtered_exact"
+          },
+          "query_count": 6,
+          "recall_at_k": 0.9500000000000001,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 143.3432986959815,
+            "mean": 23.890549782663584,
+            "p50": 22.611649706959724,
+            "p95": 27.82269986346364,
+            "p99": 28.097099903970957
+          },
+          "notes": [
+            "actual PostgreSQL filtered exact SQL; vector index disabled"
+          ]
+        },
+        {
+          "strategy": "postfilter",
+          "params": {
+            "mode": "postgres_hnsw_postfilter",
+            "ef_search": 40,
+            "hnsw_m": 8,
+            "hnsw_ef_construction": 32
+          },
+          "query_count": 6,
+          "recall_at_k": 0.3,
+          "returns_k_rate": 0.0,
+          "result_count_mean": 3.0,
+          "latency_ms": {
+            "total": 144.745999481529,
+            "mean": 24.1243332469215,
+            "p50": 22.69704989157617,
+            "p95": 27.881674701347947,
+            "p99": 28.31633468158543
+          },
+          "notes": [
+            "actual PostgreSQL/pgvector HNSW SQL with scalar post-filter"
+          ]
+        },
+        {
+          "strategy": "iterative",
+          "params": {
+            "mode": "postgres_hnsw_iterative",
+            "ef_search": 40,
+            "max_scan_tuples": 512,
+            "iterative_order": "relaxed_order",
+            "hnsw_m": 8,
+            "hnsw_ef_construction": 32
+          },
+          "query_count": 6,
+          "recall_at_k": 0.9500000000000001,
+          "returns_k_rate": 1.0,
+          "result_count_mean": 10.0,
+          "latency_ms": {
+            "total": 155.29480017721653,
+            "mean": 25.882466696202755,
+            "p50": 26.201600208878517,
+            "p95": 28.301674756221473,
+            "p99": 28.66553475614637
+          },
+          "notes": [
+            "actual PostgreSQL/pgvector HNSW iterative scan SQL"
+          ]
+        }
+      ],
+      "elapsed_ms": 645.2885000035167,
+      "notes": [
+        "benchmark measured actual PostgreSQL/pgvector SQL execution",
+        "ground truth still comes from blocked exact in-process computation",
+        "iterative requires pgvector >= 0.8.0 when selected",
+        "partial strategy builds a session-local partial HNSW index",
+        "partition strategy builds a session-local list-partitioned table",
+        "temporary benchmark table is session-local and discarded on disconnect"
+      ]
+    }
+  ],
+  "calibration": {
+    "source": "docs\\benchmarks\\real-pgvector-calibration.json",
+    "profile": {
+      "version": 1,
+      "dataset_id": "real-pgvector-readme",
+      "hardware_id": "local-docker-pgvector",
+      "index_method": "hnsw",
+      "c_d": 2.221006124373437,
+      "c_scan": 2.221006124373437,
+      "c_h": 36.66008911485325,
+      "delta_strict": 0.0,
+      "recall_curve": [
+        [
+          20,
+          0.10000000000000002
+        ],
+        [
+          40,
+          0.18333333333333335
+        ],
+        [
+          80,
+          0.31666666666666665
+        ]
+      ]
+    }
+  },
+  "elapsed_ms": 2611.169300042093,
+  "notes": [
+    "sweep varies global selectivity and filter/vector correlation",
+    "measured_best is lowest p95 latency among actual PostgreSQL strategies meeting quality targets",
+    "local selectivity is estimated from exact unfiltered probes for every point",
+    "each point rebuilds a session-local temp table and HNSW index"
+  ]
+}

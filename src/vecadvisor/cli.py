@@ -1519,7 +1519,10 @@ def benchmark_db(
         str,
         typer.Option(
             "--strategies",
-            help="Comma-separated DB strategies: exact,postfilter,iterative, or all.",
+            help=(
+                "Comma-separated DB strategies: exact,postfilter,iterative,partial,"
+                "partition, or all."
+            ),
         ),
     ] = "all",
     filter_selectivity: Annotated[

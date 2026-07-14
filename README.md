@@ -117,10 +117,10 @@ against a production pgvector index.
 
 ## Install
 
-Install the current alpha from the GitHub release:
+Install from PyPI:
 
 ```bash
-python -m pip install https://github.com/vecadvisor/vecadvisor/releases/download/v0.1.0a1/vecadvisor-0.1.0a1-py3-none-any.whl
+python -m pip install vecadvisor
 ```
 
 For local development:
@@ -129,11 +129,11 @@ For local development:
 python -m pip install -e ".[dev]"
 ```
 
-PyPI publishing is prepared through GitHub Actions Trusted Publishing. After
-the PyPI project is configured:
+The current alpha release is also available as wheel and source artifacts on
+GitHub:
 
 ```bash
-python -m pip install vecadvisor
+python -m pip install https://github.com/vecadvisor/vecadvisor/releases/download/v0.1.0a1/vecadvisor-0.1.0a1-py3-none-any.whl
 ```
 
 The CLI entry point is:

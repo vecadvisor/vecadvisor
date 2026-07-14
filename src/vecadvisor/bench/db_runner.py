@@ -64,6 +64,7 @@ def run_postgres_synthetic_benchmark(
     hnsw_ef_construction: int = 32,
     block_rows: int | None = None,
     statement_timeout_ms: int = 30_000,
+    maintenance_work_mem: str | None = None,
 ) -> BenchmarkReport:
     """Run exact and HNSW post-filter strategies against PostgreSQL/pgvector."""
 
@@ -106,6 +107,7 @@ def run_postgres_synthetic_benchmark(
         hnsw_m=hnsw_m,
         hnsw_ef_construction=hnsw_ef_construction,
         statement_timeout_ms=statement_timeout_ms,
+        maintenance_work_mem=maintenance_work_mem,
     )
     capabilities = load_pg_capabilities(conn)
     if STRATEGY_ITERATIVE in strategies and not capabilities.supports_hnsw_iterative_scan:
@@ -196,6 +198,7 @@ def run_postgres_synthetic_benchmark(
             hnsw_m=hnsw_m,
             hnsw_ef_construction=hnsw_ef_construction,
             statement_timeout_ms=statement_timeout_ms,
+            maintenance_work_mem=maintenance_work_mem,
         )
         partial_indices, partial_latencies = _run_partial_sql(
             conn,
@@ -233,6 +236,7 @@ def run_postgres_synthetic_benchmark(
             hnsw_m=hnsw_m,
             hnsw_ef_construction=hnsw_ef_construction,
             statement_timeout_ms=statement_timeout_ms,
+            maintenance_work_mem=maintenance_work_mem,
         )
         partition_indices, partition_latencies = _run_partition_sql(
             conn,
@@ -276,6 +280,7 @@ def run_postgres_synthetic_benchmark(
             "dataset_seed": dataset.seed,
             "query_seed": queries.seed,
             "temp_table": table_name,
+            "maintenance_work_mem": maintenance_work_mem,
             "postgres": pg_capabilities_to_json(capabilities),
         },
         ground_truth={
@@ -310,6 +315,7 @@ def _load_synthetic_table(
     hnsw_m: int,
     hnsw_ef_construction: int,
     statement_timeout_ms: int,
+    maintenance_work_mem: str | None,
 ) -> None:
     table_sql = quote_identifier(table_name)
     index_sql = quote_identifier(f"{table_name}_embedding_hnsw_idx")
@@ -328,6 +334,7 @@ def _load_synthetic_table(
             ") ON COMMIT PRESERVE ROWS"
         )
         _copy_dataset_rows(conn, table_sql=table_sql, dataset=dataset)
+        _set_maintenance_work_mem(conn, maintenance_work_mem)
         conn.execute(
             f"CREATE INDEX {index_sql} ON {table_sql} "
             f"USING hnsw (embedding {opclass}) "
@@ -344,11 +351,13 @@ def _create_partial_hnsw_index(
     hnsw_m: int,
     hnsw_ef_construction: int,
     statement_timeout_ms: int,
+    maintenance_work_mem: str | None,
 ) -> None:
     table_sql = quote_identifier(table_name)
     index_sql = quote_identifier(f"{table_name}_embedding_partial_hnsw_idx")
     with conn.transaction():
         _set_common_timeout(conn, statement_timeout_ms)
+        _set_maintenance_work_mem(conn, maintenance_work_mem)
         conn.execute(f"DROP INDEX IF EXISTS {index_sql}")
         conn.execute(
             f"CREATE INDEX {index_sql} ON {table_sql} "
@@ -368,6 +377,7 @@ def _load_partitioned_synthetic_table(
     hnsw_m: int,
     hnsw_ef_construction: int,
     statement_timeout_ms: int,
+    maintenance_work_mem: str | None,
 ) -> None:
     table_sql = quote_identifier(table_name)
     true_table_sql = quote_identifier(f"{table_name}_true")
@@ -376,6 +386,7 @@ def _load_partitioned_synthetic_table(
     with conn.transaction():
         conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
         _set_common_timeout(conn, statement_timeout_ms)
+        _set_maintenance_work_mem(conn, maintenance_work_mem)
         conn.execute(f"DROP TABLE IF EXISTS {table_sql}")
         conn.execute(
             f"CREATE TEMP TABLE {table_sql} ("
@@ -602,6 +613,18 @@ def _set_common_timeout(conn: Connection[Any], statement_timeout_ms: int) -> Non
     conn.execute(
         "SELECT set_config('statement_timeout', %s, true)",
         (f"{statement_timeout_ms}ms",),
+    )
+
+
+def _set_maintenance_work_mem(
+    conn: Connection[Any],
+    maintenance_work_mem: str | None,
+) -> None:
+    if maintenance_work_mem is None:
+        return
+    conn.execute(
+        "SELECT set_config('maintenance_work_mem', %s, true)",
+        (maintenance_work_mem,),
     )
 
 

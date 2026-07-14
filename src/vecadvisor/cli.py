@@ -76,6 +76,7 @@ from .local_cache import (
 from .local_probe import (
     DEFAULT_MAX_QUERY_VECTORS,
     DEFAULT_PROBE_ROWS,
+    LocalProbeError,
     load_query_vector,
     load_query_vectors,
     load_query_vectors_from_sql,
@@ -261,19 +262,23 @@ def explain(
         )
         query_vector_dims: int | None = None
         local_selectivity: LocalSelectivity | None = None
+        local_probe_warning: str | None = None
         observed_planner: ObservedPlannerChoice | None = None
         if q_vector is not None:
             query_vector = load_query_vector(q_vector, expected_dim=stats.vector_dim)
             query_vector_dims = len(query_vector)
-            local_selectivity = run_local_selectivity_probe(
-                conn,
-                table=stats,
-                query=query_spec,
-                filter_sql=query,
-                query_vector=query_vector,
-                s_global=advisor_selectivity,
-                probe_rows=probe_rows,
-            )
+            try:
+                local_selectivity = run_local_selectivity_probe(
+                    conn,
+                    table=stats,
+                    query=query_spec,
+                    filter_sql=query,
+                    query_vector=query_vector,
+                    s_global=advisor_selectivity,
+                    probe_rows=probe_rows,
+                )
+            except LocalProbeError as exc:
+                local_probe_warning = _local_probe_fallback_warning(exc)
             observed_planner = observe_planner_choice(
                 conn,
                 table=stats,
@@ -337,7 +342,7 @@ def explain(
             local_selectivity=local_selectivity,
             recall_target=recall_target,
         ),
-        "notes": _explain_notes(q_vector, local_selectivity),
+        "notes": _explain_notes(q_vector, local_selectivity, local_probe_warning),
     }
     _print_diagnostic_payload(payload, diagnostic_format)
 
@@ -482,6 +487,7 @@ def recommend_command(
         local_cache_file: Path | None = None
         local_cache_hit = False
         local_cache_stored = False
+        local_probe_warning: str | None = None
         observed_planner: ObservedPlannerChoice | None = None
         if query_vectors:
             if local_cache_dir is not None:
@@ -505,26 +511,30 @@ def recommend_command(
                     )
                     local_cache_hit = local_selectivity is not None
             if local_selectivity is None:
-                local_selectivity = run_local_selectivity_probes(
-                    conn,
-                    table=stats,
-                    query=query_spec,
-                    filter_sql=query,
-                    query_vectors=query_vectors,
-                    s_global=advisor_selectivity,
-                    probe_rows=probe_rows,
-                )
-                if _is_table_sample_vector_source(vector_source):
-                    local_selectivity = _downgrade_table_sample_local_selectivity(
-                        local_selectivity
+                try:
+                    local_selectivity = run_local_selectivity_probes(
+                        conn,
+                        table=stats,
+                        query=query_spec,
+                        filter_sql=query,
+                        query_vectors=query_vectors,
+                        s_global=advisor_selectivity,
+                        probe_rows=probe_rows,
                     )
-                if local_cache_dir is not None and local_cache_key is not None:
-                    local_cache_file = store_local_selectivity_cache(
-                        local_cache_dir,
-                        local_cache_key,
-                        local_selectivity,
-                    )
-                    local_cache_stored = True
+                except LocalProbeError as exc:
+                    local_probe_warning = _local_probe_fallback_warning(exc)
+                else:
+                    if _is_table_sample_vector_source(vector_source):
+                        local_selectivity = _downgrade_table_sample_local_selectivity(
+                            local_selectivity
+                        )
+                    if local_cache_dir is not None and local_cache_key is not None:
+                        local_cache_file = store_local_selectivity_cache(
+                            local_cache_dir,
+                            local_cache_key,
+                            local_selectivity,
+                        )
+                        local_cache_stored = True
             observed_planner = observe_planner_choice(
                 conn,
                 table=stats,
@@ -593,7 +603,7 @@ def recommend_command(
             local_selectivity=local_selectivity,
             recall_target=recall_target,
         ),
-        "notes": _recommend_notes(vector_source, local_selectivity),
+        "notes": _recommend_notes(vector_source, local_selectivity, local_probe_warning),
     }
     _print_diagnostic_payload(payload, diagnostic_format)
 
@@ -1606,6 +1616,13 @@ def benchmark_db(
             help="Statement timeout for PostgreSQL benchmark queries.",
         ),
     ] = 30_000,
+    maintenance_work_mem: Annotated[
+        str | None,
+        typer.Option(
+            "--maintenance-work-mem",
+            help="Optional transaction-local maintenance_work_mem for DB index builds.",
+        ),
+    ] = None,
     seed: Annotated[int, typer.Option("--seed", help="Synthetic dataset seed.")] = 0,
     out: Annotated[
         Path | None,
@@ -1650,6 +1667,7 @@ def benchmark_db(
                 hnsw_ef_construction=hnsw_ef_construction,
                 block_rows=block_rows,
                 statement_timeout_ms=statement_timeout_ms,
+                maintenance_work_mem=maintenance_work_mem,
             )
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
@@ -2549,9 +2567,15 @@ def _ranked_candidate_to_json(
 def _explain_notes(
     q_vector: Path | None,
     local_selectivity: LocalSelectivity | None,
+    local_probe_warning: str | None = None,
 ) -> list[str]:
     if q_vector is None:
         return ["local selectivity probe skipped because --q-vector was not supplied"]
+    if local_probe_warning is not None:
+        return [
+            local_probe_warning,
+            "recommendation uses global selectivity as a low-confidence fallback",
+        ]
     if local_selectivity is None:
         return ["local selectivity probe did not run"]
     return [
@@ -2589,8 +2613,16 @@ def _downgrade_table_sample_local_selectivity(
 def _recommend_notes(
     vector_source: str,
     local_selectivity: LocalSelectivity | None,
+    local_probe_warning: str | None = None,
 ) -> list[str]:
     if local_selectivity is None:
+        if local_probe_warning is not None:
+            return [
+                f"representative query vector source: {vector_source}",
+                local_probe_warning,
+                "recommendation uses global selectivity as a low-confidence fallback",
+                "verify that PostgreSQL can use an hnsw or ivfflat index for the probe",
+            ]
         return [
             "representative query vectors were not supplied; recommendation uses global "
             "selectivity as a low-confidence fallback",
@@ -2607,3 +2639,7 @@ def _recommend_notes(
         )
     notes.extend(local_selectivity.notes)
     return notes
+
+
+def _local_probe_fallback_warning(exc: LocalProbeError) -> str:
+    return f"local selectivity probe skipped: {exc}"

@@ -63,7 +63,8 @@ vecadvisor benchmark-db \
   --hnsw-m 16 \
   --hnsw-ef-construction 64 \
   --block-rows 8192 \
-  --statement-timeout-ms 600000 \
+  --maintenance-work-mem 2GB \
+  --statement-timeout-ms 14400000 \
   --out docs/benchmarks/sift1m-pgvector-benchmark.json
 ```
 
@@ -76,9 +77,11 @@ vecadvisor plot-benchmark \
   --title "VecAdvisor SIFT1M pgvector Pareto"
 ```
 
-## Publication Criteria
+## Published Artifact
 
-Commit the generated JSON and SVG only after recording:
+The committed run is summarized in
+[`sift1m-pgvector-benchmark.md`](sift1m-pgvector-benchmark.md), with machine
+and PostgreSQL details recorded alongside:
 
 - machine CPU and memory,
 - Docker/PostgreSQL/pgvector versions,
@@ -87,5 +90,6 @@ Commit the generated JSON and SVG only after recording:
 - whether every strategy completed under the timeout,
 - recall@k, returns-k rate, and p95 latency.
 
-Until that file exists in this directory, the repository has a reproducible
-large-scale path but not a committed large-scale benchmark result.
+After reproducing the benchmark, remove the ignored `data/` directory so the
+downloaded HDF5 file, converted `.npy` files, and transient logs do not keep
+consuming local disk space.

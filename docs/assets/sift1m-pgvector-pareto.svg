@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="560" viewBox="0 0 920 560" role="img" aria-labelledby="title desc">
+<title id="title">VecAdvisor SIFT1M pgvector Pareto</title>
+<desc id="desc">Recall versus QPS Pareto chart for postgres-file benchmark results.</desc>
+<style>
+text { font-family: "Segoe UI", Arial, sans-serif; fill: #111827; }
+.chart-title { font-size: 24px; font-weight: 700; }
+.summary, .legend, .footnote { font-size: 12px; fill: #4b5563; }
+.axis-label, .tick { font-size: 11px; fill: #6b7280; }
+.frame { fill: #ffffff; stroke: #d1d5db; stroke-width: 1; }
+.grid { stroke: #e5e7eb; stroke-width: 1; }
+.frontier { fill: none; stroke: #111827; stroke-width: 1.8; stroke-dasharray: 6 4; }
+.pareto-point { stroke-width: 2; }
+.point-label { font-size: 12px; font-weight: 600; }
+.under-return { stroke: #991b1b; stroke-width: 2; fill: none; }
+</style>
+<rect width="920" height="560" fill="#ffffff"/>
+<text class="chart-title" x="86" y="38">VecAdvisor SIFT1M pgvector Pareto</text>
+<text class="summary" x="86" y="64">dataset: postgres-file  |  rows: 1000000  |  queries: 16  |  k: 10  |  metric: l2</text>
+<circle cx="86" cy="92" r="5" fill="#2563eb"/>
+<text class="legend" x="96" y="96">exact</text>
+<circle cx="171" cy="92" r="5" fill="#dc2626"/>
+<text class="legend" x="181" y="96">postfilter</text>
+<circle cx="301" cy="92" r="5" fill="#059669"/>
+<text class="legend" x="311" y="96">iterative</text>
+<line class="frontier" x1="730" y1="92" x2="770" y2="92"/>
+<text class="legend" x="778" y="96">Pareto frontier</text>
+<rect class="frame" x="86" y="124" width="794" height="358" rx="4"/>
+<line class="grid" x1="86.00" y1="124" x2="86.00" y2="482"/>
+<text class="tick" text-anchor="middle" x="86.00" y="502">3.208</text>
+<line class="grid" x1="391.35" y1="124" x2="391.35" y2="482"/>
+<text class="tick" text-anchor="middle" x="391.35" y="502">3.318</text>
+<line class="grid" x1="880.00" y1="124" x2="880.00" y2="482"/>
+<text class="tick" text-anchor="middle" x="880.00" y="502">3.502</text>
+<line class="grid" x1="86" y1="482.00" x2="880" y2="482.00"/>
+<text class="tick" text-anchor="end" x="78" y="486.00">0.0</text>
+<line class="grid" x1="86" y1="303.00" x2="880" y2="303.00"/>
+<text class="tick" text-anchor="end" x="78" y="307.00">0.5</text>
+<line class="grid" x1="86" y1="159.80" x2="880" y2="159.80"/>
+<text class="tick" text-anchor="end" x="78" y="163.80">0.9</text>
+<line class="grid" x1="86" y1="124.00" x2="880" y2="124.00"/>
+<text class="tick" text-anchor="end" x="78" y="128.00">1.0</text>
+<text class="axis-label" x="24" y="156" transform="rotate(-90 24 156)">recall@k</text>
+<text class="axis-label" text-anchor="end" x="880" y="530">QPS, higher is better</text>
+
+<circle class="pareto-point" cx="391.35" cy="124.00" r="7" fill="#2563eb" stroke="#2563eb"><title>exact: recall 1, QPS 3.32, p95 354 ms, returns-k 1</title></circle>
+<text class="point-label" x="401.35" y="138.00">exact</text>
+<circle class="pareto-point" cx="86.00" cy="128.47" r="7" fill="#dc2626" stroke="#dc2626"><title>postfilter: recall 0.988, QPS 3.21, p95 387 ms, returns-k 1</title></circle>
+<text class="point-label" x="96.00" y="138.00">postfilter</text>
+<circle class="pareto-point" cx="880.00" cy="124.00" r="7" fill="#059669" stroke="#059669"><title>iterative: recall 1, QPS 3.5, p95 332 ms, returns-k 1</title></circle>
+<text class="point-label" x="800.00" y="138.00">iterative</text>
+<text class="footnote" x="86" y="538">Each point is one measured strategy. Hollow markers under-return for at least one query. Frontier ignores dominated points.</text>
+</svg>

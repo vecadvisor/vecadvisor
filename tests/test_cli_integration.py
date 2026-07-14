@@ -76,6 +76,44 @@ def pg_cli_table() -> Iterator[str]:
         conn.execute(f"DROP TABLE IF EXISTS {table_name}")
 
 
+@pytest.fixture(scope="module")
+def pg_cli_table_without_vector_index() -> Iterator[str]:
+    try:
+        conn = connect(TEST_DSN)
+    except psycopg.OperationalError as exc:
+        pytest.skip(f"PostgreSQL test database is not available: {exc}")
+
+    conn.autocommit = True
+    table_name = "vecadvisor_cli_no_vector_index_fixture"
+    with conn:
+        conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
+        conn.execute(f"DROP TABLE IF EXISTS {table_name}")
+        conn.execute(
+            f"""
+            CREATE TABLE {table_name} (
+                id bigserial PRIMARY KEY,
+                tenant_id int NOT NULL,
+                embedding vector(3)
+            )
+            """
+        )
+        conn.execute(
+            f"""
+            INSERT INTO {table_name} (tenant_id, embedding)
+            SELECT (g % 4),
+                   ARRAY[
+                       (g % 5)::float4,
+                       (g % 7)::float4,
+                       (g % 11)::float4
+                   ]::vector
+            FROM generate_series(1, 64) AS g
+            """
+        )
+        conn.execute(f"ANALYZE {table_name}")
+        yield f"public.{table_name}"
+        conn.execute(f"DROP TABLE IF EXISTS {table_name}")
+
+
 def test_explain_cli_outputs_selectivity_cross_check(pg_cli_table: str) -> None:
     runner = CliRunner()
     result = runner.invoke(
@@ -498,6 +536,46 @@ def test_recommend_cli_without_query_vectors_marks_low_confidence_fallback(
     assert decision["planner_strategy"] is None
     assert decision["planner_mismatch"] is None
     assert any("low-confidence fallback" in note for note in payload["notes"])
+
+
+def test_recommend_cli_falls_back_when_local_probe_cannot_use_ann_index(
+    pg_cli_table_without_vector_index: str,
+    tmp_path: Path,
+) -> None:
+    vector_file = tmp_path / "query-vectors.json"
+    vector_file.write_text(json.dumps({"vectors": [[1, 1, 1], [2, 2, 2]]}), encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        [
+            "recommend",
+            "--dsn",
+            TEST_DSN,
+            "--table",
+            pg_cli_table_without_vector_index,
+            "--vector",
+            "embedding",
+            "--query",
+            "tenant_id = 1",
+            "--q-vectors",
+            str(vector_file),
+            "--probe-rows",
+            "8",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    assert payload["query_vectors"]["source"] == f"file:{vector_file}"
+    assert payload["query_vectors"]["count"] == 2
+    assert payload["local_selectivity"] is None
+    assert payload["recommendation"]["s_local"] == pytest.approx(0.25)
+    assert payload["recommendation"]["decision"]["selectivity_source"] == (
+        "global_selectivity_fallback"
+    )
+    assert any("local selectivity probe skipped" in note for note in payload["notes"])
+    assert any("requires an hnsw or ivfflat index" in note for note in payload["notes"])
 
 
 def test_recommend_cli_uses_table_sample_vector_fallback(pg_cli_table: str) -> None:

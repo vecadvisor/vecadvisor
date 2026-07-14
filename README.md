@@ -23,6 +23,10 @@ than `k` rows. Sometimes a filter-first exact scan is faster and exact.
 Sometimes pgvector iterative scans are the right answer. Sometimes a partial
 HNSW index or partitioning is the durable fix.
 
+![VecAdvisor recommend demo catching filtered ANN recall collapse](docs/assets/vecadvisor-demo.gif)
+
+[Asciinema cast fallback](docs/assets/vecadvisor-demo.cast)
+
 This project models that choice with:
 
 - PostgreSQL catalog and statistics introspection.
@@ -133,7 +137,10 @@ vecadvisor plot-crossover docs/benchmarks/synthetic-sweep.json \
 
 The current real pgvector artifact is intentionally small enough to reproduce
 quickly in a developer checkout. Larger public benchmark artifacts are being
-added before the first non-alpha launch.
+added before the first non-alpha launch. A first scale artifact is also
+available:
+[`SIFT1M pgvector benchmark`](docs/benchmarks/sift1m-pgvector-benchmark.md),
+measuring `1,000,000` real 128-dimensional SIFT vectors on PostgreSQL/pgvector.
 
 ## Install
 
@@ -424,8 +431,8 @@ Important JSON fields:
 
 - Alpha quality: APIs and output shape may change before v0.1.
 - The current release is an external CLI. It does not change PostgreSQL planner behavior.
-- A SIFT1M real-embedding scale benchmark recipe exists, but the large result
-  artifact is not committed yet.
+- The SIFT1M benchmark commits JSON/SVG results only; source vectors are
+  downloaded into ignored local `data/` paths.
 - Calibration constants are workload and hardware dependent.
 - Predicate parsing intentionally supports a
   [restricted safe subset of filters](docs/predicates.md).

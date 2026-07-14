@@ -86,11 +86,13 @@ def test_run_postgres_synthetic_benchmark_measures_actual_sql(pg_conn: object) -
         hnsw_m=8,
         hnsw_ef_construction=32,
         block_rows=16,
+        maintenance_work_mem="64MB",
     )
 
     metrics_by_strategy = {metrics.strategy: metrics for metrics in report.strategies}
     assert report.dataset["id"] == "postgres-synthetic"
     assert report.dataset["rows"] == 96
+    assert report.dataset["maintenance_work_mem"] == "64MB"
     assert report.ground_truth["k"] == 3
     assert set(metrics_by_strategy) == {
         STRATEGY_EXACT,

@@ -25,7 +25,10 @@ def eq_selectivity(column: ColumnStats, value: Any, n_rows: int) -> float:
     mcf_sum = sum(column.mcf)
     remaining_freq = max(0.0, 1.0 - column.null_frac - mcf_sum)
     remaining_distinct = max(1.0, ndistinct - mcv_count)
-    return clamp_selectivity(remaining_freq / remaining_distinct)
+    selectivity = remaining_freq / remaining_distinct
+    if column.mcf:
+        selectivity = min(selectivity, min(column.mcf))
+    return clamp_selectivity(selectivity)
 
 
 def unknown_eq_selectivity(column: ColumnStats, n_rows: int) -> float:

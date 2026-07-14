@@ -41,8 +41,10 @@ pgvector, but it is not affiliated with the official pgvector project.
 
 ## Documentation
 
+- [Design](DESIGN.md)
 - [Predicate support](docs/predicates.md)
 - [Benchmark artifacts](docs/benchmarks/README.md)
+- [SIFT1M scale benchmark recipe](docs/benchmarks/scale-benchmark.md)
 - [Release checklist](docs/release.md)
 
 ## Why Local Selectivity Matters
@@ -60,21 +62,34 @@ across representative query vectors.
 
 ## Benchmark Evidence
 
-The repository includes a deterministic synthetic crossover sweep under
-`docs/benchmarks/` and a rendered chart:
+The lead artifact measures actual PostgreSQL/pgvector behavior, not a
+self-contained simulator:
+
+![Real pgvector Pareto chart](docs/assets/real-pgvector-pareto.svg)
+
+Using the bundled `pgvector/pgvector:pg17` container, fixed-size HNSW
+post-filtering reached only `0.2125` recall@k and returned full `k` for `0%`
+of queries on a filtered workload. Iterative, partial-index, and
+partition-pruned HNSW recovered result quality. This is the failure mode
+VecAdvisor is designed to catch before it becomes a production surprise.
+
+See
+[`docs/benchmarks/real-pgvector-benchmark.md`](docs/benchmarks/real-pgvector-benchmark.md)
+for the SQL strategy details, hardware notes, and reproduction commands.
+
+The repository also includes deterministic synthetic validation under
+`docs/benchmarks/`:
 
 ![Synthetic crossover chart](docs/assets/synthetic-crossover.svg)
 
-This sweep varies filter selectivity (`0.01`, `0.05`, `0.1`, `0.3`) and
-filter/vector correlation (`-0.6`, `0`, `0.6`) across 12 points. In this
-strategy-semantics simulation:
+That sweep varies filter selectivity (`0.01`, `0.05`, `0.1`, `0.3`) and
+filter/vector correlation (`-0.6`, `0`, `0.6`) across 12 points. It validates
+the advisor's strategy semantics and quality safeguards: the cost-model winner
+matched the measured synthetic winner in all bins, and default post-filter ANN
+missed recall or returns-k targets in all bins. Treat it as unit-level model
+validation, not proof of production pgvector latency.
 
-- Prediction match rate: `100%`.
-- Default post-filter ANN missed recall or returns-k targets in `12/12` bins.
-- VecAdvisor avoided post-filter ANN in all post-filter failure bins.
-- Mean speedup versus post-filter ANN: `1.98x`.
-
-Reproduce the artifact:
+Reproduce the synthetic artifact:
 
 ```bash
 vecadvisor calibrate \
@@ -116,22 +131,9 @@ vecadvisor plot-crossover docs/benchmarks/synthetic-sweep.json \
   --title "VecAdvisor synthetic crossover"
 ```
 
-The current proof is synthetic and intentionally small enough to run quickly
-in a developer checkout. It validates the advisor's cost-model behavior and
-quality safeguards; it is not a replacement for workload-specific calibration
-against a production pgvector index.
-
-The repository also includes a small actual PostgreSQL/pgvector artifact:
-
-![Real pgvector Pareto chart](docs/assets/real-pgvector-pareto.svg)
-
-That benchmark uses the bundled `pgvector/pgvector:pg17` container with
-`4096` synthetic rows, `32` dimensions, `8` query vectors, target selectivity
-`0.05`, and correlation `-0.6`. Fixed-size HNSW post-filtering reached only
-`0.2125` recall@k and returned full `k` for `0%` of queries, while iterative,
-partial-index, and partition-pruned HNSW recovered quality. See
-[`docs/benchmarks/real-pgvector-benchmark.md`](docs/benchmarks/real-pgvector-benchmark.md)
-for commands and caveats.
+The current real pgvector artifact is intentionally small enough to reproduce
+quickly in a developer checkout. Larger public benchmark artifacts are being
+added before the first non-alpha launch.
 
 ## Install
 
@@ -187,6 +189,19 @@ vecadvisor recommend \
   --q-vectors examples/query-vectors.json \
   --probe-rows 16 \
   --max-query-vectors 3 \
+  --format text
+```
+
+No representative query vectors yet? Use the table-sampled fallback for a
+30-second first look. VecAdvisor marks this path as low confidence:
+
+```bash
+vecadvisor recommend \
+  --dsn postgresql://postgres:postgres@localhost:5432/vecadvisor \
+  --table public.documents \
+  --vector embedding \
+  --query "tenant_id = 1" \
+  --allow-table-sample-vectors \
   --format text
 ```
 
@@ -409,7 +424,8 @@ Important JSON fields:
 
 - Alpha quality: APIs and output shape may change before v0.1.
 - The current release is an external CLI. It does not change PostgreSQL planner behavior.
-- Realistic public benchmark datasets are not bundled yet.
+- A SIFT1M real-embedding scale benchmark recipe exists, but the large result
+  artifact is not committed yet.
 - Calibration constants are workload and hardware dependent.
 - Predicate parsing intentionally supports a
   [restricted safe subset of filters](docs/predicates.md).

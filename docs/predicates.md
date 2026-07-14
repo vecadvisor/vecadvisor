@@ -28,6 +28,13 @@ Supported predicate forms:
 - bare boolean columns, equivalent to `column = true`
 - conjunctions with `AND`
 
+Range selectivity currently uses one histogram path for strict and inclusive
+bounds: `<` and `<=` share the same estimate, and `>` and `>=` share the same
+estimate. That matches the dominant continuous-value case but does not add the
+equality-boundary mass that PostgreSQL can account for on discrete values with
+most-common-value statistics. Equality-heavy boundary predicates should be
+checked against the emitted PostgreSQL EXPLAIN cross-check.
+
 Supported literal types:
 
 - integers

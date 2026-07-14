@@ -1,3 +1,5 @@
+import pytest
+
 from vecadvisor.models import ColumnStats, Predicate, PredicateKind, TableStats
 from vecadvisor.selectivity import (
     conjunction_selectivity,
@@ -17,6 +19,18 @@ def test_eq_selectivity_uses_mcv_frequency() -> None:
     )
 
     assert eq_selectivity(column, 42, 10_000) == 0.2
+
+
+def test_eq_selectivity_clamps_non_mcv_value_to_least_common_mcv_frequency() -> None:
+    column = ColumnStats(
+        name="tenant_id",
+        n_distinct=10,
+        null_frac=0.0,
+        mcv=(1, 2),
+        mcf=(0.40, 0.05),
+    )
+
+    assert eq_selectivity(column, 99, 10_000) == pytest.approx(0.05)
 
 
 def test_conjunction_multiplies_initial_independent_estimates() -> None:

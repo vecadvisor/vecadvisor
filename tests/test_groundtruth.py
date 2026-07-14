@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from vecadvisor.bench import groundtruth
 from vecadvisor.bench.groundtruth import exact_topk, max_block_rows_for_memory, recall_at_k
 
 
@@ -48,3 +49,32 @@ def test_recall_at_k_ignores_padded_truth_entries() -> None:
 
 def test_max_block_rows_for_memory_uses_dimension_and_budget() -> None:
     assert max_block_rows_for_memory(dim=128, bytes_budget=1024, dtype_bytes=4) == 2
+
+
+def test_exact_topk_streams_query_blocks_without_materializing_full_matrix(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    np = pytest.importorskip("numpy")
+    base = np.arange(1000 * 4, dtype="float32").reshape(1000, 4)
+    queries = np.zeros((3, 4), dtype="float32")
+    seen_blocks: list[tuple[int, int]] = []
+    original_distance_scores = groundtruth._distance_scores
+
+    def wrapped_distance_scores(
+        np_module: object,
+        block: object,
+        query: object,
+        *,
+        metric: str,
+    ) -> object:
+        shape = tuple(int(value) for value in block.shape)
+        seen_blocks.append(shape)
+        assert shape[0] <= 128
+        return original_distance_scores(np_module, block, query, metric=metric)
+
+    monkeypatch.setattr(groundtruth, "_distance_scores", wrapped_distance_scores)
+
+    result = groundtruth.exact_topk(base, queries, k=5, block_rows=128)
+
+    assert result.blocks_scanned == 8
+    assert len(seen_blocks) == 3 * 8

@@ -5,8 +5,11 @@ import pytest
 from vecadvisor.local_probe import (
     LocalProbeError,
     QueryVectorError,
+    _ivfflat_probe_target,
+    _plan_payload_uses_index,
     _probe_confidence,
     _probe_notes,
+    _set_int_guc_at_least,
     _table_sample_percent,
     aggregate_local_selectivity,
     build_local_probe_sql,
@@ -14,7 +17,14 @@ from vecadvisor.local_probe import (
     parse_query_vector_text,
     vector_literal,
 )
-from vecadvisor.models import LocalSelectivity, Predicate, PredicateKind, QuerySpec
+from vecadvisor.models import (
+    IndexMeta,
+    LocalSelectivity,
+    Predicate,
+    PredicateKind,
+    QuerySpec,
+    TableStats,
+)
 
 
 def test_parse_query_vector_text_accepts_json_and_plain_text() -> None:
@@ -118,6 +128,77 @@ def test_table_sample_percent_bounds_large_tables_and_full_samples_small_tables(
     )
 
 
+def test_ivfflat_probe_target_scales_with_lists_and_probe_rows() -> None:
+    table = TableStats(
+        relname="public.docs",
+        n_rows=10_000,
+        n_pages=100,
+        columns=(),
+        indexes=(
+            IndexMeta(
+                name="docs_embedding_ivf_idx",
+                method="ivfflat",
+                columns=("embedding",),
+                lists=100,
+            ),
+        ),
+    )
+
+    assert _ivfflat_probe_target(
+        table=table,
+        vector_column="embedding",
+        probe_rows=200,
+    ) == 2
+
+    small_table = TableStats(
+        relname="public.docs",
+        n_rows=100,
+        n_pages=10,
+        columns=(),
+        indexes=table.indexes,
+    )
+    assert _ivfflat_probe_target(
+        table=small_table,
+        vector_column="embedding",
+        probe_rows=200,
+    ) == 100
+
+
+def test_set_int_guc_keeps_existing_higher_value() -> None:
+    conn = _FakeConn({"hnsw.ef_search": "320"})
+
+    _set_int_guc_at_least(conn, "hnsw.ef_search", 200)
+
+    assert conn.set_calls == [("hnsw.ef_search", "320")]
+
+
+def test_set_int_guc_raises_low_default_to_probe_rows() -> None:
+    conn = _FakeConn({"hnsw.ef_search": "40"})
+
+    _set_int_guc_at_least(conn, "hnsw.ef_search", 200)
+
+    assert conn.set_calls == [("hnsw.ef_search", "200")]
+
+
+def test_probe_plan_detection_requires_ann_index_name() -> None:
+    plan = [
+        {
+            "Plan": {
+                "Node Type": "Limit",
+                "Plans": [
+                    {
+                        "Node Type": "Index Scan",
+                        "Index Name": "docs_embedding_hnsw_idx",
+                    }
+                ],
+            }
+        }
+    ]
+
+    assert _plan_payload_uses_index(plan, {"docs_embedding_hnsw_idx"}) is True
+    assert _plan_payload_uses_index(plan, {"docs_other_idx"}) is False
+
+
 def test_aggregate_local_selectivity_uses_p10_and_reduces_small_sample_confidence() -> None:
     probes = (
         _local(s_local=0.01, confidence=1.0, passing_rows=1),
@@ -157,3 +238,25 @@ def _local(
         passing_rows=passing_rows,
         resolution_floor=0.01,
     )
+
+
+class _FakeCursor:
+    def __init__(self, row: object) -> None:
+        self._row = row
+
+    def fetchone(self) -> object:
+        return self._row
+
+
+class _FakeConn:
+    def __init__(self, settings: dict[str, str]) -> None:
+        self.settings = settings
+        self.set_calls: list[tuple[str, str]] = []
+
+    def execute(self, sql: str, params: tuple[object, ...]) -> _FakeCursor:
+        if "current_setting" in sql:
+            return _FakeCursor((self.settings.get(str(params[0])),))
+        if "set_config" in sql:
+            self.set_calls.append((str(params[0]), str(params[1])))
+            return _FakeCursor((None,))
+        raise AssertionError(f"unexpected SQL: {sql}")

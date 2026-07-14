@@ -327,20 +327,7 @@ def _load_synthetic_table(
             f"embedding vector({dataset.dim}) NOT NULL"
             ") ON COMMIT PRESERVE ROWS"
         )
-        rows = (
-            (
-                row_id,
-                bool(dataset.filter_mask[row_id]),
-                _pgvector_literal(dataset.vectors[row_id]),
-            )
-            for row_id in range(dataset.n_rows)
-        )
-        with conn.cursor() as cursor:
-            cursor.executemany(
-                f"INSERT INTO {table_sql} (id, passes_filter, embedding) "
-                "VALUES (%s, %s, %s::vector)",
-                rows,
-            )
+        _copy_dataset_rows(conn, table_sql=table_sql, dataset=dataset)
         conn.execute(
             f"CREATE INDEX {index_sql} ON {table_sql} "
             f"USING hnsw (embedding {opclass}) "
@@ -405,20 +392,7 @@ def _load_partitioned_synthetic_table(
             f"CREATE TEMP TABLE {false_table_sql} "
             f"PARTITION OF {table_sql} FOR VALUES IN (false)"
         )
-        rows = (
-            (
-                row_id,
-                bool(dataset.filter_mask[row_id]),
-                _pgvector_literal(dataset.vectors[row_id]),
-            )
-            for row_id in range(dataset.n_rows)
-        )
-        with conn.cursor() as cursor:
-            cursor.executemany(
-                f"INSERT INTO {table_sql} (id, passes_filter, embedding) "
-                "VALUES (%s, %s, %s::vector)",
-                rows,
-            )
+        _copy_dataset_rows(conn, table_sql=table_sql, dataset=dataset)
         conn.execute(
             f"CREATE INDEX {true_index_sql} ON {true_table_sql} "
             f"USING hnsw (embedding {opclass}) "
@@ -456,6 +430,25 @@ def _run_exact_sql(
             latencies_ms.append((time.perf_counter() - started) * 1000.0)
             _store_ids(result_ids, query_index, _row_ids(rows))
     return result_ids, tuple(latencies_ms)
+
+
+def _copy_dataset_rows(
+    conn: Connection[Any],
+    *,
+    table_sql: str,
+    dataset: SyntheticDataset,
+) -> None:
+    copy_sql = f"COPY {table_sql} (id, passes_filter, embedding) FROM STDIN"
+    with conn.cursor() as cursor:
+        with cursor.copy(copy_sql) as copy:
+            for row_id in range(dataset.n_rows):
+                copy.write_row(
+                    (
+                        row_id,
+                        bool(dataset.filter_mask[row_id]),
+                        _pgvector_literal(dataset.vectors[row_id]),
+                    )
+                )
 
 
 def _run_postfilter_sql(

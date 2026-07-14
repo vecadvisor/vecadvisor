@@ -17,9 +17,12 @@ VecAdvisor alpha.
   sweep.
 - `real-pgvector-plan.md`: plan for the first Docker-reproducible benchmark
   against real PostgreSQL and pgvector behavior.
+- `scale-benchmark.md`: reproducible SIFT1M real-embedding benchmark recipe.
 
 These files are intentionally small enough to regenerate during local
 development. Synthetic files validate cost-model behavior and safety checks.
 Real pgvector files measure actual PostgreSQL/pgvector SQL on small
 deterministic datasets and should not be generalized without workload-specific
-calibration.
+calibration. The SIFT1M scale recipe downloads external data into ignored
+`data/` paths and should be run only on machines sized for million-row HNSW
+index builds.

@@ -9,7 +9,7 @@ from typing import Any
 
 from psycopg import Connection
 
-from .models import LocalSelectivity, QuerySpec, TableStats
+from .models import IndexMeta, LocalSelectivity, QuerySpec, TableStats
 from .plan import normalize_readonly_query
 from .query_spec import quote_identifier, quote_qualified_identifier
 from .selectivity import rho_from_selectivities
@@ -242,8 +242,9 @@ def run_local_selectivity_probes(
             probe_rows=probe_rows,
             statement_timeout_ms=statement_timeout_ms,
             require_vector_index=require_vector_index,
+            validate_index_plan=query_index == 0,
         )
-        for query_vector in query_vectors
+        for query_index, query_vector in enumerate(query_vectors)
     )
     return aggregate_local_selectivity(probes, s_global=s_global)
 
@@ -259,12 +260,14 @@ def run_local_selectivity_probe(
     probe_rows: int = DEFAULT_PROBE_ROWS,
     statement_timeout_ms: int = 30_000,
     require_vector_index: bool = True,
-    ) -> LocalSelectivity:
+    validate_index_plan: bool = True,
+) -> LocalSelectivity:
     """Estimate local selectivity from the unfiltered vector top-m neighborhood."""
 
     if probe_rows <= 0:
         raise LocalProbeError("probe_rows must be positive")
-    if require_vector_index and not _has_vector_index(table, query.vector_column):
+    ann_indexes = _ann_indexes(table, query.vector_column)
+    if require_vector_index and not ann_indexes:
         raise LocalProbeError(
             f"local probe requires an hnsw or ivfflat index on {query.vector_column!r}"
         )
@@ -277,6 +280,22 @@ def run_local_selectivity_probe(
             (f"{statement_timeout_ms}ms",),
         )
         conn.execute("SELECT set_config('enable_seqscan', 'off', true)")
+        _apply_probe_search_gucs(
+            conn,
+            table=table,
+            vector_column=query.vector_column,
+            probe_rows=probe_rows,
+            indexes=ann_indexes,
+        )
+        if (
+            require_vector_index
+            and validate_index_plan
+            and not _probe_plan_uses_ann_index(conn, sql, params, indexes=ann_indexes)
+        ):
+            raise LocalProbeError(
+                "local probe did not use an hnsw or ivfflat index; cannot measure "
+                "pgvector's ANN frontier"
+            )
         row = conn.execute(sql, params).fetchone()
 
     if row is None:
@@ -387,10 +406,132 @@ def _probe_projection(query: QuerySpec) -> str:
 
 
 def _has_vector_index(table: TableStats, vector_column: str) -> bool:
-    return any(
-        index.method in {"hnsw", "ivfflat"} and vector_column in index.columns
+    return bool(_ann_indexes(table, vector_column))
+
+
+def _ann_indexes(table: TableStats, vector_column: str) -> tuple[IndexMeta, ...]:
+    return tuple(
+        index
         for index in table.indexes
+        if index.method in {"hnsw", "ivfflat"} and vector_column in index.columns
     )
+
+
+def _apply_probe_search_gucs(
+    conn: Connection[Any],
+    *,
+    table: TableStats,
+    vector_column: str,
+    probe_rows: int,
+    indexes: Sequence[IndexMeta],
+) -> None:
+    methods = {index.method for index in indexes}
+    if "hnsw" in methods:
+        _set_int_guc_at_least(conn, "hnsw.ef_search", probe_rows)
+    if "ivfflat" in methods:
+        _set_int_guc_at_least(
+            conn,
+            "ivfflat.probes",
+            _ivfflat_probe_target(
+                table=table,
+                vector_column=vector_column,
+                probe_rows=probe_rows,
+                indexes=indexes,
+            ),
+        )
+
+
+def _set_int_guc_at_least(
+    conn: Connection[Any],
+    setting_name: str,
+    minimum_value: int,
+) -> None:
+    current = _current_int_setting(conn, setting_name)
+    target = max(int(minimum_value), current or 0, 1)
+    conn.execute("SELECT set_config(%s, %s, true)", (setting_name, str(target)))
+
+
+def _current_int_setting(conn: Connection[Any], setting_name: str) -> int | None:
+    row = conn.execute("SELECT current_setting(%s, true)", (setting_name,)).fetchone()
+    if row is None:
+        return None
+    raw_value = _first_column(row)
+    if raw_value in (None, ""):
+        return None
+    try:
+        return int(str(raw_value))
+    except ValueError:
+        return None
+
+
+def _ivfflat_probe_target(
+    *,
+    table: TableStats,
+    vector_column: str,
+    probe_rows: int,
+    indexes: Sequence[IndexMeta] | None = None,
+) -> int:
+    ivfflat_indexes = tuple(
+        index
+        for index in (indexes if indexes is not None else _ann_indexes(table, vector_column))
+        if index.method == "ivfflat"
+    )
+    list_counts = tuple(
+        int(index.lists)
+        for index in ivfflat_indexes
+        if index.lists is not None and index.lists > 0
+    )
+    if not list_counts:
+        return max(1, math.ceil(math.sqrt(probe_rows)))
+
+    lists = max(list_counts)
+    rows_per_list = max(table.n_rows / lists, 1.0)
+    proportional = math.ceil(probe_rows / rows_per_list)
+    floor = 2 if lists > 1 and probe_rows > 1 else 1
+    return min(lists, max(floor, proportional, 1))
+
+
+def _probe_plan_uses_ann_index(
+    conn: Connection[Any],
+    sql: str,
+    params: tuple[Any, ...],
+    *,
+    indexes: Sequence[IndexMeta],
+) -> bool:
+    index_names = {index.name for index in indexes}
+    if not index_names:
+        return False
+    row = conn.execute(f"EXPLAIN (FORMAT JSON) {sql}", params).fetchone()
+    if row is None:
+        return False
+    return _plan_payload_uses_index(_first_column(row), index_names)
+
+
+def _plan_payload_uses_index(payload: Any, index_names: set[str]) -> bool:
+    if isinstance(payload, str):
+        try:
+            payload = json.loads(payload)
+        except json.JSONDecodeError:
+            return False
+    if isinstance(payload, list):
+        return any(_plan_payload_uses_index(item, index_names) for item in payload)
+    if not isinstance(payload, dict):
+        return False
+    if payload.get("Index Name") in index_names:
+        return True
+    plan = payload.get("Plan")
+    if isinstance(plan, dict) and _plan_payload_uses_index(plan, index_names):
+        return True
+    plans = payload.get("Plans")
+    if isinstance(plans, list):
+        return any(_plan_payload_uses_index(child, index_names) for child in plans)
+    return False
+
+
+def _first_column(row: Any) -> Any:
+    if isinstance(row, dict):
+        return next(iter(row.values()), None)
+    return row[0]
 
 
 def _probe_confidence(*, sample_size: int, passing_rows: int, probe_rows: int) -> float:

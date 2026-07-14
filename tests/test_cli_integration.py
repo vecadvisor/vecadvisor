@@ -148,6 +148,35 @@ def test_explain_cli_outputs_selectivity_cross_check(pg_cli_table: str) -> None:
     }
 
 
+def test_advisor_selectivity_matches_postgres_explain_rows_on_seeded_table(
+    pg_cli_table: str,
+) -> None:
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        [
+            "explain",
+            "--dsn",
+            TEST_DSN,
+            "--table",
+            pg_cli_table,
+            "--vector",
+            "embedding",
+            "--query",
+            "tenant_id = 1",
+            "--limit",
+            "10",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    selectivity = json.loads(result.output)["selectivity"]
+    assert selectivity["advisor_rows"] == pytest.approx(16.0)
+    assert selectivity["postgres_plan_rows"] == pytest.approx(16.0)
+    assert selectivity["absolute_delta"] <= 0.02
+    assert selectivity["status"] == "aligned"
+
+
 def test_explain_cli_outputs_text_diagnostics(pg_cli_table: str) -> None:
     runner = CliRunner()
     result = runner.invoke(

@@ -117,13 +117,20 @@ against a production pgvector index.
 
 ## Install
 
+Install the current alpha from the GitHub release:
+
+```bash
+python -m pip install https://github.com/vecadvisor/vecadvisor/releases/download/v0.1.0a1/vecadvisor-0.1.0a1-py3-none-any.whl
+```
+
 For local development:
 
 ```bash
 python -m pip install -e ".[dev]"
 ```
 
-For package users once released on PyPI:
+PyPI publishing is prepared through GitHub Actions Trusted Publishing. After
+the PyPI project is configured:
 
 ```bash
 python -m pip install vecadvisor
@@ -133,6 +140,35 @@ The CLI entry point is:
 
 ```bash
 vecadvisor --help
+```
+
+## 30-Second Demo
+
+From a checkout:
+
+```bash
+python -m pip install -e ".[dev]"
+docker compose -f docker/docker-compose.yml up -d
+docker compose -f docker/docker-compose.yml exec -T postgres \
+  psql -U postgres -d vecadvisor < examples/demo.sql
+
+vecadvisor explain \
+  --dsn postgresql://postgres:postgres@localhost:5432/vecadvisor \
+  --table public.documents \
+  --vector embedding \
+  --query "tenant_id = 1" \
+  --q-vector examples/query-vector.json \
+  --probe-rows 16 \
+  --format text
+
+vecadvisor recommend \
+  --dsn postgresql://postgres:postgres@localhost:5432/vecadvisor \
+  --table public.documents \
+  --vector embedding \
+  --query "tenant_id = 1" \
+  --q-vectors examples/query-vectors.json \
+  --probe-rows 16 \
+  --max-query-vectors 3
 ```
 
 ## Local PostgreSQL

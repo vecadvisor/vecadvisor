@@ -6,9 +6,15 @@ which contains one million 128-dimensional image-descriptor vectors. The data
 file is not committed to this repository.
 
 The benchmark keeps the vectors real and makes the scalar filter deterministic
-from the vector space: VecAdvisor projects each vector onto a seeded random
-direction and marks the top selectivity tail as `passes_filter`. That gives a
-real-embedding workload with a known correlated scalar predicate.
+from the vector space. Two filter modes are useful:
+
+- `random_projection_top_tail`: projects each vector onto a seeded random
+  direction and marks the top selectivity tail as `passes_filter`. This gives
+  a deterministic vector-derived scalar predicate.
+- `query_anticorrelated_band`: excludes each benchmark query's immediate
+  top-N neighborhood, then selects the nearest remaining rows. This keeps
+  global selectivity fixed while making local selectivity low at the fixed
+  HNSW frontier.
 
 ## Prepare Dataset Files
 
@@ -27,6 +33,20 @@ python tools/prepare_ann_benchmark_dataset.py \
   --rows 1000000 \
   --queries 16 \
   --filter-selectivity 0.05 \
+  --seed 20260714
+```
+
+For the recall-collapse artifact, use the anti-correlated mode:
+
+```bash
+python tools/prepare_ann_benchmark_dataset.py \
+  --dataset-url https://ann-benchmarks.com/sift-128-euclidean.hdf5 \
+  --out-dir data/sift1m-anticorrelated \
+  --rows 1000000 \
+  --queries 16 \
+  --filter-selectivity 0.05 \
+  --filter-mode query_anticorrelated_band \
+  --anti-start-rank 40 \
   --seed 20260714
 ```
 
@@ -89,6 +109,17 @@ and PostgreSQL details recorded alongside:
 - exact command lines,
 - whether every strategy completed under the timeout,
 - recall@k, returns-k rate, and p95 latency.
+
+The committed anti-correlated run is summarized in
+[`sift1m-anticorrelated-pgvector-benchmark.md`](sift1m-anticorrelated-pgvector-benchmark.md).
+That artifact demonstrates the local-selectivity failure mode at SIFT1M scale:
+fixed-frontier postfilter reaches `0.3438` recall@k and returns full `k` for
+only `25%` of queries, while iterative HNSW recovers `1.0000` recall@k and
+full `k`.
+
+The projection-tail run also shows the risk: fixed-frontier postfilter reaches
+`0.1750` recall@k and returns full `k` for only `12.5%` of queries, while
+iterative HNSW recovers `0.9875` recall@k and full `k`.
 
 After reproducing the benchmark, remove the ignored `data/` directory so the
 downloaded HDF5 file, converted `.npy` files, and transient logs do not keep

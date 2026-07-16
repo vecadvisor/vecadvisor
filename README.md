@@ -81,6 +81,23 @@ See
 [`docs/benchmarks/real-pgvector-benchmark.md`](docs/benchmarks/real-pgvector-benchmark.md)
 for the SQL strategy details, hardware notes, and reproduction commands.
 
+The scale artifact uses the same idea on `1,000,000` real SIFT vectors:
+
+![SIFT1M anti-correlated pgvector Pareto chart](docs/assets/sift1m-anticorrelated-pgvector-pareto.svg)
+
+With global filter selectivity fixed at `5%`, the anti-correlated SIFT1M run
+has zero passing rows in every query's exact top-40 neighborhood. Fixed-frontier
+postfilter reaches only `0.3438` recall@k and returns full `k` for `25%` of
+queries. Iterative HNSW recovers `1.0000` recall@k and full `k`, a `65.6`
+percentage-point recall improvement over fixed postfilter.
+
+See
+[`docs/benchmarks/sift1m-anticorrelated-pgvector-benchmark.md`](docs/benchmarks/sift1m-anticorrelated-pgvector-benchmark.md)
+for the full SIFT1M recall-collapse artifact. A companion projection-tail
+SIFT1M run is also committed; it reaches `0.1750` postfilter recall@k and
+`0.9875` iterative recall@k:
+[`docs/benchmarks/sift1m-pgvector-benchmark.md`](docs/benchmarks/sift1m-pgvector-benchmark.md).
+
 The repository also includes deterministic synthetic validation under
 `docs/benchmarks/`:
 
@@ -134,13 +151,6 @@ vecadvisor plot-crossover docs/benchmarks/synthetic-sweep.json \
   --out docs/assets/synthetic-crossover.svg \
   --title "VecAdvisor synthetic crossover"
 ```
-
-The current real pgvector artifact is intentionally small enough to reproduce
-quickly in a developer checkout. Larger public benchmark artifacts are being
-added before the first non-alpha launch. A first scale artifact is also
-available:
-[`SIFT1M pgvector benchmark`](docs/benchmarks/sift1m-pgvector-benchmark.md),
-measuring `1,000,000` real 128-dimensional SIFT vectors on PostgreSQL/pgvector.
 
 ## Install
 

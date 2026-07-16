@@ -10,6 +10,11 @@ from urllib.request import Request, urlopen
 DEFAULT_DATASET_URL = "https://ann-benchmarks.com/sift-128-euclidean.hdf5"
 DEFAULT_DATASET_NAME = "sift-128-euclidean"
 CHUNK_BYTES = 16 * 1024 * 1024
+FILTER_MODES = {
+    "random_projection_top_tail",
+    "query_anticorrelated_tail",
+    "query_anticorrelated_band",
+}
 
 h5py: Any
 np: Any
@@ -39,14 +44,18 @@ def main(argv: list[str] | None = None) -> int:
         rows = min(args.rows, int(train.shape[0]))
         queries = min(args.queries, int(test.shape[0]))
         dim = int(train.shape[1])
+        query_vectors = np.asarray(test[:queries], dtype="float32")
         _copy_matrix_to_npy(train, vectors_path, rows=rows, chunk_rows=args.chunk_rows)
-        filter_mask = _write_projection_filter(
+        filter_mask = _write_filter_mask(
             train,
             filter_mask_path,
             rows=rows,
             selectivity=args.filter_selectivity,
             seed=args.seed,
             chunk_rows=args.chunk_rows,
+            filter_mode=args.filter_mode,
+            query_vectors=query_vectors,
+            anti_start_rank=args.anti_start_rank,
         )
         _copy_matrix_to_npy(test, query_vectors_path, rows=queries, chunk_rows=args.chunk_rows)
 
@@ -60,9 +69,10 @@ def main(argv: list[str] | None = None) -> int:
         "rows": rows,
         "dimensions": dim,
         "queries": queries,
-        "filter_mode": "random_projection_top_tail",
+        "filter_mode": args.filter_mode,
         "filter_selectivity_target": args.filter_selectivity,
         "filter_selectivity_observed": float(filter_mask.mean()),
+        "anti_start_rank": args.anti_start_rank,
         "seed": args.seed,
     }
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
@@ -97,6 +107,24 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--rows", type=int, default=1_000_000)
     parser.add_argument("--queries", type=int, default=16)
     parser.add_argument("--filter-selectivity", type=float, default=0.05)
+    parser.add_argument(
+        "--filter-mode",
+        choices=sorted(FILTER_MODES),
+        default="random_projection_top_tail",
+        help=(
+            "Filter generation mode. query_anticorrelated_band creates a filter "
+            "that is globally selective but sparse in the immediate query neighborhoods."
+        ),
+    )
+    parser.add_argument(
+        "--anti-start-rank",
+        type=int,
+        default=2000,
+        help=(
+            "Exact top-N rows per query excluded by query_anticorrelated_band; "
+            "ignored by other modes."
+        ),
+    )
     parser.add_argument("--seed", type=int, default=20260714)
     parser.add_argument("--chunk-rows", type=int, default=50_000)
     parser.add_argument("--force", action="store_true")
@@ -109,6 +137,8 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         parser.error("--filter-selectivity must be in (0, 1)")
     if args.chunk_rows <= 0:
         parser.error("--chunk-rows must be positive")
+    if args.anti_start_rank < 0:
+        parser.error("--anti-start-rank must be non-negative")
     return args
 
 
@@ -170,6 +200,179 @@ def _write_projection_filter(
     mask[top_indices] = True
     np.save(path, mask, allow_pickle=False)
     return mask
+
+
+def _write_filter_mask(
+    matrix: Any,
+    path: Path,
+    *,
+    rows: int,
+    selectivity: float,
+    seed: int,
+    chunk_rows: int,
+    filter_mode: str,
+    query_vectors: Any,
+    anti_start_rank: int,
+) -> Any:
+    if filter_mode == "random_projection_top_tail":
+        return _write_projection_filter(
+            matrix,
+            path,
+            rows=rows,
+            selectivity=selectivity,
+            seed=seed,
+            chunk_rows=chunk_rows,
+        )
+    if filter_mode == "query_anticorrelated_tail":
+        return _write_query_anticorrelated_tail_filter(
+            matrix,
+            path,
+            rows=rows,
+            selectivity=selectivity,
+            query_vectors=query_vectors,
+            chunk_rows=chunk_rows,
+        )
+    if filter_mode == "query_anticorrelated_band":
+        return _write_query_anticorrelated_band_filter(
+            matrix,
+            path,
+            rows=rows,
+            selectivity=selectivity,
+            query_vectors=query_vectors,
+            chunk_rows=chunk_rows,
+            anti_start_rank=anti_start_rank,
+        )
+    raise ValueError(f"unsupported filter mode: {filter_mode}")
+
+
+def _write_query_anticorrelated_tail_filter(
+    matrix: Any,
+    path: Path,
+    *,
+    rows: int,
+    selectivity: float,
+    query_vectors: Any,
+    chunk_rows: int,
+) -> Any:
+    scores = _query_distance_scores(
+        matrix,
+        query_vectors,
+        rows=rows,
+        chunk_rows=chunk_rows,
+    )
+    target_count = _target_count(rows=rows, selectivity=selectivity)
+    top_indices = np.argpartition(scores, rows - target_count)[rows - target_count :]
+    mask = np.zeros(rows, dtype="bool")
+    mask[top_indices] = True
+    np.save(path, mask, allow_pickle=False)
+    return mask
+
+
+def _write_query_anticorrelated_band_filter(
+    matrix: Any,
+    path: Path,
+    *,
+    rows: int,
+    selectivity: float,
+    query_vectors: Any,
+    chunk_rows: int,
+    anti_start_rank: int,
+) -> Any:
+    scores = _query_distance_scores(
+        matrix,
+        query_vectors,
+        rows=rows,
+        chunk_rows=chunk_rows,
+    )
+    target_count = _target_count(rows=rows, selectivity=selectivity)
+    excluded = _query_topk_union_mask(
+        matrix,
+        query_vectors,
+        rows=rows,
+        chunk_rows=chunk_rows,
+        top_k=anti_start_rank,
+    )
+    candidate_scores = scores.copy()
+    candidate_scores[excluded] = np.inf
+    available = int(np.isfinite(candidate_scores).sum())
+    if available < target_count:
+        raise ValueError(
+            "query_anticorrelated_band cannot satisfy filter_selectivity after "
+            "excluding query neighborhoods; lower --anti-start-rank"
+        )
+    selected = np.argpartition(candidate_scores, target_count - 1)[:target_count]
+    mask = np.zeros(rows, dtype="bool")
+    mask[selected] = True
+    np.save(path, mask, allow_pickle=False)
+    return mask
+
+
+def _query_distance_scores(
+    matrix: Any,
+    query_vectors: Any,
+    *,
+    rows: int,
+    chunk_rows: int,
+) -> Any:
+    queries = np.asarray(query_vectors, dtype="float32")
+    if int(queries.ndim) != 2 or int(queries.shape[0]) <= 0:
+        raise ValueError("query-distance filter modes require at least one query vector")
+    query_norms = np.einsum("ij,ij->i", queries, queries, optimize=True)
+    scores = np.empty(rows, dtype="float32")
+    for start in range(0, rows, chunk_rows):
+        end = min(start + chunk_rows, rows)
+        block = np.asarray(matrix[start:end], dtype="float32")
+        block_norms = np.einsum("ij,ij->i", block, block, optimize=True)
+        distances = block_norms[:, None] + query_norms[None, :] - 2.0 * (block @ queries.T)
+        scores[start:end] = np.maximum(distances, 0.0).min(axis=1)
+    return scores
+
+
+def _query_topk_union_mask(
+    matrix: Any,
+    query_vectors: Any,
+    *,
+    rows: int,
+    chunk_rows: int,
+    top_k: int,
+) -> Any:
+    excluded = np.zeros(rows, dtype="bool")
+    if top_k <= 0:
+        return excluded
+    queries = np.asarray(query_vectors, dtype="float32")
+    effective_top_k = min(top_k, rows)
+    for query in queries:
+        scores = _single_query_distance_scores(
+            matrix,
+            query,
+            rows=rows,
+            chunk_rows=chunk_rows,
+        )
+        excluded[np.argpartition(scores, effective_top_k - 1)[:effective_top_k]] = True
+    return excluded
+
+
+def _single_query_distance_scores(
+    matrix: Any,
+    query: Any,
+    *,
+    rows: int,
+    chunk_rows: int,
+) -> Any:
+    normalized_query = np.asarray(query, dtype="float32")
+    query_norm = float(normalized_query @ normalized_query)
+    scores = np.empty(rows, dtype="float32")
+    for start in range(0, rows, chunk_rows):
+        end = min(start + chunk_rows, rows)
+        block = np.asarray(matrix[start:end], dtype="float32")
+        block_norms = np.einsum("ij,ij->i", block, block, optimize=True)
+        distances = block_norms + query_norm - 2.0 * (block @ normalized_query)
+        scores[start:end] = np.maximum(distances, 0.0)
+    return scores
+
+
+def _target_count(*, rows: int, selectivity: float) -> int:
+    return max(1, min(rows - 1, round(rows * selectivity)))
 
 
 if __name__ == "__main__":

@@ -1048,7 +1048,11 @@ def test_benchmark_db_cli_outputs_postgres_strategy_metrics(
         "iterative",
     ]
     assert payload["strategies"][0]["recall_at_k"] == pytest.approx(1.0)
-    assert payload["strategies"][1]["params"]["mode"] == "postgres_hnsw_postfilter"
+    assert (
+        payload["strategies"][1]["params"]["mode"]
+        == "postgres_hnsw_fixed_frontier_postfilter"
+    )
+    assert payload["strategies"][1]["params"]["frontier_rows"] == 8
     assert payload["strategies"][2]["params"]["mode"] == "postgres_hnsw_iterative"
     assert payload["strategies"][2]["params"]["max_scan_tuples"] == 48
     assert payload["output"] == {"path": str(out_path), "format": "json"}

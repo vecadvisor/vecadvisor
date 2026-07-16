@@ -23,11 +23,11 @@ checkout.
 
 | Strategy | Recall@k | Returns-k rate | p95 latency |
 | --- | ---: | ---: | ---: |
-| exact | `1.0000` | `1.0000` | `1.78 ms` |
-| postfilter | `0.2125` | `0.0000` | `66.31 ms` |
-| iterative | `0.9625` | `1.0000` | `21.29 ms` |
-| partial | `1.0000` | `1.0000` | `20.00 ms` |
-| partition | `1.0000` | `1.0000` | `35.88 ms` |
+| exact | `1.0000` | `1.0000` | `2.74 ms` |
+| postfilter | `0.2125` | `0.0000` | `177.79 ms` |
+| iterative | `0.9625` | `1.0000` | `40.63 ms` |
+| partial | `1.0000` | `1.0000` | `40.21 ms` |
+| partition | `1.0000` | `1.0000` | `41.56 ms` |
 
 The important signal is not that exact wins on this tiny dataset. The useful
 system behavior is that fixed-size HNSW post-filtering returns too few rows

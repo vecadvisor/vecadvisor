@@ -28,21 +28,22 @@ The source HDF5 and converted `.npy` files are not committed.
 
 | Strategy | Recall@k | Returns-k rate | Mean latency | p95 latency |
 | --- | ---: | ---: | ---: | ---: |
-| exact | `1.0000` | `1.0000` | `301.37 ms` | `353.81 ms` |
-| postfilter | `0.9875` | `1.0000` | `311.69 ms` | `386.78 ms` |
-| iterative | `1.0000` | `1.0000` | `285.55 ms` | `332.19 ms` |
+| exact | `1.0000` | `1.0000` | `278.92 ms` | `321.63 ms` |
+| postfilter | `0.1750` | `0.1250` | `99.82 ms` | `142.97 ms` |
+| iterative | `0.9875` | `1.0000` | `284.28 ms` | `362.05 ms` |
 
 ![SIFT1M pgvector Pareto chart](../assets/sift1m-pgvector-pareto.svg)
 
-This run is scale evidence, not the recall-collapse headline. On this
-projection-filtered SIFT workload, fixed post-filter HNSW did not collapse:
-it reached `0.9875` recall@k and returned full `k` for every query.
-Iterative HNSW was still the best measured strategy, with exact recall and
-the lowest p95 latency among the three measured strategies.
+This run is scale evidence for a vector-derived scalar filter. Under the
+fixed-frontier postfilter semantics, the projection-tail filter is locally
+sparse for the selected SIFT queries: postfilter reaches only `0.1750`
+recall@k and returns full `k` for `12.5%` of queries. Iterative HNSW recovers
+`0.9875` recall@k and returns full `k` for every query.
 
-The anti-correlated small pgvector benchmark remains the clearest recall-risk
-artifact because it intentionally places the scalar filter against the local
-vector neighborhoods.
+For the same SIFT1M vectors under a deliberately controlled anti-correlated
+local-selectivity distribution,
+see the
+[`SIFT1M anti-correlated pgvector benchmark`](sift1m-anticorrelated-pgvector-benchmark.md).
 
 ## Reproduce
 

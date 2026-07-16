@@ -148,8 +148,9 @@ def run_postgres_synthetic_benchmark(
             strategy_metrics_from_indices(
                 strategy=STRATEGY_POSTFILTER,
                 params={
-                    "mode": "postgres_hnsw_postfilter",
+                    "mode": "postgres_hnsw_fixed_frontier_postfilter",
                     "ef_search": ef_search,
+                    "frontier_rows": ef_search,
                     "hnsw_m": hnsw_m,
                     "hnsw_ef_construction": hnsw_ef_construction,
                 },
@@ -157,7 +158,10 @@ def run_postgres_synthetic_benchmark(
                 candidate_indices=postfilter_indices,
                 latencies_ms=postfilter_latencies,
                 k=k,
-                notes=("actual PostgreSQL/pgvector HNSW SQL with scalar post-filter",),
+                notes=(
+                    "actual PostgreSQL/pgvector HNSW SQL over an unfiltered fixed frontier",
+                    "scalar filter is applied after the MATERIALIZED frontier CTE",
+                ),
             )
         )
     if STRATEGY_ITERATIVE in strategies:
@@ -477,9 +481,16 @@ def _run_postfilter_sql(
     result_ids = np.full((int(queries.shape[0]), k), -1, dtype="int64")
     latencies_ms: list[float] = []
     sql = (
-        f"SELECT id FROM {table_sql} "
-        "WHERE passes_filter "
+        "WITH candidate_frontier AS MATERIALIZED ("
+        "SELECT id, passes_filter, "
+        f"embedding {distance_op} %s::vector AS distance "
+        f"FROM {table_sql} "
         f"ORDER BY embedding {distance_op} %s::vector "
+        "LIMIT %s"
+        ") "
+        "SELECT id FROM candidate_frontier "
+        "WHERE passes_filter "
+        "ORDER BY distance "
         "LIMIT %s"
     )
     with conn.transaction():
@@ -488,8 +499,9 @@ def _run_postfilter_sql(
         conn.execute("SELECT set_config('hnsw.ef_search', %s, true)", (str(ef_search),))
         conn.execute("SELECT set_config('hnsw.iterative_scan', 'off', true)")
         for query_index in range(int(queries.shape[0])):
+            query_literal = _pgvector_literal(queries[query_index])
             started = time.perf_counter()
-            rows = conn.execute(sql, (_pgvector_literal(queries[query_index]), k)).fetchall()
+            rows = conn.execute(sql, (query_literal, query_literal, ef_search, k)).fetchall()
             latencies_ms.append((time.perf_counter() - started) * 1000.0)
             _store_ids(result_ids, query_index, _row_ids(rows))
     return result_ids, tuple(latencies_ms)

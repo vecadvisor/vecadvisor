@@ -11,7 +11,8 @@
     "correlation": -0.6,
     "dataset_seed": 610,
     "query_seed": 611,
-    "temp_table": "vecadvisor_db_bench_298305",
+    "temp_table": "vecadvisor_db_bench_8332",
+    "maintenance_work_mem": null,
     "postgres": {
       "server_version": "17.10 (Debian 17.10-1.pgdg12+1)",
       "server_version_num": 170010,
@@ -54,11 +55,11 @@
       "returns_k_rate": 1.0,
       "result_count_mean": 10.0,
       "latency_ms": {
-        "total": 9.90560045465827,
-        "mean": 1.2382000568322837,
-        "p50": 1.228750217705965,
-        "p95": 1.776840002276003,
-        "p99": 1.9828080059960482
+        "total": 15.214500017464161,
+        "mean": 1.9018125021830201,
+        "p50": 1.7597500700503588,
+        "p95": 2.7400050545111294,
+        "p99": 2.982401107437908
       },
       "notes": [
         "actual PostgreSQL filtered exact SQL; vector index disabled"
@@ -67,8 +68,9 @@
     {
       "strategy": "postfilter",
       "params": {
-        "mode": "postgres_hnsw_postfilter",
+        "mode": "postgres_hnsw_fixed_frontier_postfilter",
         "ef_search": 40,
+        "frontier_rows": 40,
         "hnsw_m": 8,
         "hnsw_ef_construction": 32
       },
@@ -77,14 +79,15 @@
       "returns_k_rate": 0.0,
       "result_count_mean": 2.125,
       "latency_ms": {
-        "total": 227.81010018661618,
-        "mean": 28.476262523327023,
-        "p50": 19.81274993158877,
-        "p95": 66.31406506057824,
-        "p99": 86.01769305299966
+        "total": 797.5497990846634,
+        "mean": 99.69372488558292,
+        "p50": 82.68730016425252,
+        "p95": 177.7933649020269,
+        "p99": 216.7615529010072
       },
       "notes": [
-        "actual PostgreSQL/pgvector HNSW SQL with scalar post-filter"
+        "actual PostgreSQL/pgvector HNSW SQL over an unfiltered fixed frontier",
+        "scalar filter is applied after the MATERIALIZED frontier CTE"
       ]
     },
     {
@@ -102,11 +105,11 @@
       "returns_k_rate": 1.0,
       "result_count_mean": 10.0,
       "latency_ms": {
-        "total": 159.27229961380363,
-        "mean": 19.909037451725453,
-        "p50": 19.934699870646,
-        "p95": 21.294929832220078,
-        "p99": 21.72282576560974
+        "total": 291.83740075677633,
+        "mean": 36.47967509459704,
+        "p50": 36.08674998395145,
+        "p95": 40.63181027304381,
+        "p99": 41.40836225356907
       },
       "notes": [
         "actual PostgreSQL/pgvector HNSW iterative scan SQL"
@@ -126,11 +129,11 @@
       "returns_k_rate": 1.0,
       "result_count_mean": 10.0,
       "latency_ms": {
-        "total": 143.4173001907766,
-        "mean": 17.927162523847073,
-        "p50": 17.793800216168165,
-        "p95": 20.004334882833064,
-        "p99": 20.136466813273728
+        "total": 278.6121005192399,
+        "mean": 34.82651256490499,
+        "p50": 34.55040021799505,
+        "p95": 40.20743500441313,
+        "p99": 40.26060711592436
       },
       "notes": [
         "actual PostgreSQL/pgvector partial HNSW index SQL"
@@ -150,18 +153,18 @@
       "returns_k_rate": 1.0,
       "result_count_mean": 10.0,
       "latency_ms": {
-        "total": 242.9893002845347,
-        "mean": 30.373662535566837,
-        "p50": 31.686849892139435,
-        "p95": 35.882944939658046,
-        "p99": 36.417548870667815
+        "total": 299.0939002484083,
+        "mean": 37.38673753105104,
+        "p50": 36.92270000465214,
+        "p95": 41.55640979297459,
+        "p99": 42.088241735473275
       },
       "notes": [
         "actual PostgreSQL partition-pruned pgvector HNSW SQL"
       ]
     }
   ],
-  "elapsed_ms": 1934.3654001131654,
+  "elapsed_ms": 2916.966199874878,
   "notes": [
     "benchmark measured actual PostgreSQL/pgvector SQL execution",
     "ground truth still comes from blocked exact in-process computation",

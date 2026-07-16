@@ -27,11 +27,11 @@ text { font-family: "Segoe UI", Arial, sans-serif; fill: #111827; }
 <text class="legend" x="778" y="96">Pareto frontier</text>
 <rect class="frame" x="86" y="124" width="794" height="358" rx="4"/>
 <line class="grid" x1="86.00" y1="124" x2="86.00" y2="482"/>
-<text class="tick" text-anchor="middle" x="86.00" y="502">3.208</text>
-<line class="grid" x1="391.35" y1="124" x2="391.35" y2="482"/>
-<text class="tick" text-anchor="middle" x="391.35" y="502">3.318</text>
+<text class="tick" text-anchor="middle" x="86.00" y="502">3.518</text>
+<line class="grid" x1="100.46" y1="124" x2="100.46" y2="482"/>
+<text class="tick" text-anchor="middle" x="100.46" y="502">3.585</text>
 <line class="grid" x1="880.00" y1="124" x2="880.00" y2="482"/>
-<text class="tick" text-anchor="middle" x="880.00" y="502">3.502</text>
+<text class="tick" text-anchor="middle" x="880.00" y="502">10.02</text>
 <line class="grid" x1="86" y1="482.00" x2="880" y2="482.00"/>
 <text class="tick" text-anchor="end" x="78" y="486.00">0.0</text>
 <line class="grid" x1="86" y1="303.00" x2="880" y2="303.00"/>
@@ -42,12 +42,14 @@ text { font-family: "Segoe UI", Arial, sans-serif; fill: #111827; }
 <text class="tick" text-anchor="end" x="78" y="128.00">1.0</text>
 <text class="axis-label" x="24" y="156" transform="rotate(-90 24 156)">recall@k</text>
 <text class="axis-label" text-anchor="end" x="880" y="530">QPS, higher is better</text>
-
-<circle class="pareto-point" cx="391.35" cy="124.00" r="7" fill="#2563eb" stroke="#2563eb"><title>exact: recall 1, QPS 3.32, p95 354 ms, returns-k 1</title></circle>
-<text class="point-label" x="401.35" y="138.00">exact</text>
-<circle class="pareto-point" cx="86.00" cy="128.47" r="7" fill="#dc2626" stroke="#dc2626"><title>postfilter: recall 0.988, QPS 3.21, p95 387 ms, returns-k 1</title></circle>
-<text class="point-label" x="96.00" y="138.00">postfilter</text>
-<circle class="pareto-point" cx="880.00" cy="124.00" r="7" fill="#059669" stroke="#059669"><title>iterative: recall 1, QPS 3.5, p95 332 ms, returns-k 1</title></circle>
-<text class="point-label" x="800.00" y="138.00">iterative</text>
+<polyline class="frontier" points="100.46,124.00 880.00,419.35"><title>Pareto frontier</title></polyline>
+<circle class="pareto-point" cx="100.46" cy="124.00" r="7" fill="#2563eb" stroke="#2563eb"><title>exact: recall 1, QPS 3.59, p95 322 ms, returns-k 1</title></circle>
+<text class="point-label" x="110.46" y="138.00">exact</text>
+<circle class="pareto-point" cx="880.00" cy="419.35" r="7" fill="#ffffff" stroke="#dc2626"><title>postfilter: recall 0.175, QPS 10, p95 143 ms, returns-k 0.125</title></circle>
+<text class="point-label" x="800.00" y="411.35">postfilter</text>
+<line class="under-return" x1="874.00" y1="413.35" x2="886.00" y2="425.35"><title>returns-k below target</title></line>
+<line class="under-return" x1="886.00" y1="413.35" x2="874.00" y2="425.35"><title>returns-k below target</title></line>
+<circle class="pareto-point" cx="86.00" cy="128.47" r="7" fill="#059669" stroke="#059669"><title>iterative: recall 0.988, QPS 3.52, p95 362 ms, returns-k 1</title></circle>
+<text class="point-label" x="96.00" y="138.00">iterative</text>
 <text class="footnote" x="86" y="538">Each point is one measured strategy. Hollow markers under-return for at least one query. Frontier ignores dominated points.</text>
 </svg>

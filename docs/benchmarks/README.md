@@ -21,12 +21,16 @@ VecAdvisor alpha.
 - `sift1m-pgvector-benchmark.json`: actual PostgreSQL/pgvector benchmark on
   one million real SIFT vectors.
 - `sift1m-pgvector-benchmark.md`: summary and reproduction commands for the
-  SIFT1M artifact.
+  projection-tail SIFT1M artifact.
+- `sift1m-anticorrelated-pgvector-benchmark.json`: actual PostgreSQL/pgvector
+  benchmark on one million real SIFT vectors with a query anti-correlated
+  scalar filter.
+- `sift1m-anticorrelated-pgvector-benchmark.md`: summary and reproduction
+  commands for the SIFT1M recall-collapse artifact.
 
 These files are intentionally small enough to regenerate during local
 development. Synthetic files validate cost-model behavior and safety checks.
-Real pgvector files measure actual PostgreSQL/pgvector SQL on small
-deterministic datasets and should not be generalized without workload-specific
-calibration. The SIFT1M artifact commits only JSON/SVG output; source vectors
-are downloaded into ignored `data/` paths and should be removed after local
-runs.
+Real pgvector files measure actual PostgreSQL/pgvector SQL and should not be
+generalized without workload-specific calibration. The SIFT1M artifacts commit
+only JSON/SVG output; source vectors are downloaded into ignored `data/` paths
+and should be removed after local runs.

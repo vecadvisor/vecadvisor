@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="520" viewBox="0 0 920 520" role="img" aria-labelledby="title desc">
+<title id="title">SIFT1M filtered pgvector quality</title>
+<desc id="desc">Recall and returns-k grouped bar chart for postgres-file benchmark results.</desc>
+<style>
+text { font-family: "Segoe UI", Arial, sans-serif; fill: #111827; }
+.chart-title { font-size: 24px; font-weight: 700; }
+.summary, .legend, .footnote { font-size: 12px; fill: #4b5563; }
+.axis-label, .tick { font-size: 11px; fill: #6b7280; }
+.frame { fill: #ffffff; stroke: #d1d5db; stroke-width: 1; }
+.grid { stroke: #e5e7eb; stroke-width: 1; }
+.bar { stroke-width: 1.7; }
+.value-label { font-size: 11px; font-weight: 600; fill: #111827; }
+.strategy-label { font-size: 12px; font-weight: 600; }
+</style>
+<rect width="920" height="520" fill="#ffffff"/>
+<text class="chart-title" x="86" y="38">SIFT1M filtered pgvector quality</text>
+<text class="summary" x="86" y="64">global selectivity 5%; exact top-40 local selectivity 0% across 16 queries</text>
+<rect class="bar" x="86" y="85" width="18" height="12" fill="#111827" stroke="#111827"/>
+<text class="legend" x="112" y="96">recall@k</text>
+<rect class="bar" x="198" y="85" width="18" height="12" fill="#ffffff" stroke="#111827"/>
+<text class="legend" x="224" y="96">returns-k rate</text>
+<text class="legend" text-anchor="end" x="880" y="96">linear 0-1 scale</text>
+<rect class="frame" x="86" y="136" width="794" height="292" rx="4"/>
+<line class="grid" x1="86" y1="428.00" x2="880" y2="428.00"/>
+<text class="tick" text-anchor="end" x="78" y="432.00">0</text>
+<line class="grid" x1="86" y1="355.00" x2="880" y2="355.00"/>
+<text class="tick" text-anchor="end" x="78" y="359.00">0.25</text>
+<line class="grid" x1="86" y1="282.00" x2="880" y2="282.00"/>
+<text class="tick" text-anchor="end" x="78" y="286.00">0.5</text>
+<line class="grid" x1="86" y1="209.00" x2="880" y2="209.00"/>
+<text class="tick" text-anchor="end" x="78" y="213.00">0.75</text>
+<line class="grid" x1="86" y1="136.00" x2="880" y2="136.00"/>
+<text class="tick" text-anchor="end" x="78" y="140.00">1</text>
+<text class="axis-label" x="24" y="170" transform="rotate(-90 24 170)">quality score</text>
+<rect class="bar" x="148.19" y="136.00" width="34.00" height="292.00" fill="#2563eb" stroke="#2563eb"><title>exact recall@k 1.000</title></rect>
+<rect class="bar" x="188.31" y="136.00" width="34.00" height="292.00" fill="#ffffff" stroke="#2563eb"><title>exact returns-k 1.000</title></rect>
+<text class="value-label" text-anchor="middle" x="165.19" y="149.00">1.00</text>
+<text class="value-label" text-anchor="middle" x="205.31" y="149.00">1.00</text>
+<text class="strategy-label" text-anchor="middle" x="185.25" y="453">exact</text>
+<rect class="bar" x="346.69" y="327.62" width="34.00" height="100.38" fill="#dc2626" stroke="#dc2626"><title>postfilter recall@k 0.344</title></rect>
+<rect class="bar" x="386.81" y="355.00" width="34.00" height="73.00" fill="#ffffff" stroke="#dc2626"><title>postfilter returns-k 0.250</title></rect>
+<text class="value-label" text-anchor="middle" x="363.69" y="321.62">0.34</text>
+<text class="value-label" text-anchor="middle" x="403.81" y="349.00">0.25</text>
+<text class="strategy-label" text-anchor="middle" x="383.75" y="453">postfilter</text>
+<rect class="bar" x="545.19" y="136.00" width="34.00" height="292.00" fill="#059669" stroke="#059669"><title>iterative recall@k 1.000</title></rect>
+<rect class="bar" x="585.31" y="136.00" width="34.00" height="292.00" fill="#ffffff" stroke="#059669"><title>iterative returns-k 1.000</title></rect>
+<text class="value-label" text-anchor="middle" x="562.19" y="149.00">1.00</text>
+<text class="value-label" text-anchor="middle" x="602.31" y="149.00">1.00</text>
+<text class="strategy-label" text-anchor="middle" x="582.25" y="453">iterative</text>
+<rect class="bar" x="743.69" y="177.98" width="34.00" height="250.02" fill="#7c3aed" stroke="#7c3aed"><title>partial recall@k 0.856</title></rect>
+<rect class="bar" x="783.81" y="136.00" width="34.00" height="292.00" fill="#ffffff" stroke="#7c3aed"><title>partial returns-k 1.000</title></rect>
+<text class="value-label" text-anchor="middle" x="760.69" y="171.98">0.86</text>
+<text class="value-label" text-anchor="middle" x="800.81" y="149.00">1.00</text>
+<text class="strategy-label" text-anchor="middle" x="780.75" y="453">partial</text>
+<text class="footnote" x="86" y="496">Higher is better. Solid bars show recall@k; outlined bars show returns-k rate.</text>
+</svg>

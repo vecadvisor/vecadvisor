@@ -83,13 +83,16 @@ for the SQL strategy details, hardware notes, and reproduction commands.
 
 The scale artifact uses the same idea on `1,000,000` real SIFT vectors:
 
-![SIFT1M anti-correlated pgvector Pareto chart](docs/assets/sift1m-anticorrelated-pgvector-pareto.svg)
+![SIFT1M filtered pgvector quality chart](docs/assets/sift1m-anticorrelated-quality-bars.svg)
 
 With global filter selectivity fixed at `5%`, the anti-correlated SIFT1M run
 has zero passing rows in every query's exact top-40 neighborhood. Fixed-frontier
 postfilter reaches only `0.3438` recall@k and returns full `k` for `25%` of
 queries. Iterative HNSW recovers `1.0000` recall@k and full `k`, a `65.6`
 percentage-point recall improvement over fixed postfilter.
+
+The companion Pareto chart is still useful for throughput/quality tradeoffs:
+[`SIFT1M anti-correlated Pareto`](docs/assets/sift1m-anticorrelated-pgvector-pareto.svg).
 
 See
 [`docs/benchmarks/sift1m-anticorrelated-pgvector-benchmark.md`](docs/benchmarks/sift1m-anticorrelated-pgvector-benchmark.md)
@@ -104,10 +107,10 @@ The repository also includes deterministic synthetic validation under
 ![Synthetic crossover chart](docs/assets/synthetic-crossover.svg)
 
 That sweep varies filter selectivity (`0.01`, `0.05`, `0.1`, `0.3`) and
-filter/vector correlation (`-0.6`, `0`, `0.6`) across 12 points. It validates
-the advisor's strategy semantics and quality safeguards: the cost-model winner
-matched the measured synthetic winner in all bins, and default post-filter ANN
-missed recall or returns-k targets in all bins. Treat it as unit-level model
+filter/vector correlation (`-0.6`, `0`, `0.6`) across 12 points. It is a
+unit-level model-vs-simulation agreement check: the cost-model winner matched
+the simulated strategy-semantics winner in all bins, and default post-filter
+ANN missed recall or returns-k targets in all bins. Treat it as model
 validation, not proof of production pgvector latency.
 
 Reproduce the synthetic artifact:

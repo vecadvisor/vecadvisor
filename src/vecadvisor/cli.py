@@ -33,8 +33,10 @@ from .bench.db_runner import parse_db_strategy_list, run_postgres_synthetic_benc
 from .bench.plots import (
     DEFAULT_CHART_TITLE,
     DEFAULT_PARETO_TITLE,
+    DEFAULT_QUALITY_TITLE,
     load_benchmark_payload,
     write_benchmark_pareto_svg,
+    write_benchmark_quality_svg,
     write_crossover_svg,
 )
 from .bench.proof import build_proof_report, proof_report_to_json, write_proof_report
@@ -1451,6 +1453,9 @@ def plot_crossover_command(
                     "correlations": list(analysis.correlations),
                     "prediction_match_rate": analysis.prediction_match_rate,
                     "postfilter_failure_count": analysis.postfilter_failure_count,
+                    "safe_advisor_on_postfilter_failures": (
+                        analysis.safe_advisor_on_postfilter_failures
+                    ),
                 },
             }
         )
@@ -1493,6 +1498,58 @@ def plot_benchmark_command(
                     "title": title,
                     "width": width,
                     "kind": "benchmark-pareto",
+                },
+            }
+        )
+    )
+
+
+@app.command(name="plot-quality-bars")
+def plot_quality_bars_command(
+    benchmark: Annotated[
+        Path,
+        typer.Argument(help="Benchmark JSON produced by benchmark or benchmark-db."),
+    ],
+    out: Annotated[
+        Path,
+        typer.Option("--out", help="SVG chart output path."),
+    ],
+    title: Annotated[
+        str,
+        typer.Option("--title", help="Chart title."),
+    ] = DEFAULT_QUALITY_TITLE,
+    subtitle: Annotated[
+        str | None,
+        typer.Option("--subtitle", help="Optional chart subtitle."),
+    ] = None,
+    width: Annotated[
+        int,
+        typer.Option("--width", min=700, help="SVG width in pixels."),
+    ] = 920,
+) -> None:
+    """Render a benchmark recall/returns-k grouped bar chart as SVG."""
+
+    try:
+        payload = load_benchmark_payload(benchmark)
+        write_benchmark_quality_svg(
+            payload,
+            out,
+            title=title,
+            subtitle=subtitle,
+            width=width,
+        )
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    console.print_json(
+        json.dumps(
+            {
+                "input": {"path": str(benchmark)},
+                "output": {"path": str(out), "format": "svg"},
+                "chart": {
+                    "title": title,
+                    "width": width,
+                    "kind": "benchmark-quality-bars",
                 },
             }
         )

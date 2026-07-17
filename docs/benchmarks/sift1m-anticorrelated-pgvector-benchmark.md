@@ -42,6 +42,8 @@ says `0%`.
 | iterative | `1.0000` | `1.0000` | `269.95 ms` | `324.56 ms` |
 | partial | `0.8563` | `1.0000` | `29.55 ms` | `32.64 ms` |
 
+![SIFT1M anti-correlated quality chart](../assets/sift1m-anticorrelated-quality-bars.svg)
+
 ![SIFT1M anti-correlated pgvector Pareto chart](../assets/sift1m-anticorrelated-pgvector-pareto.svg)
 
 Fixed-frontier postfiltering is fast but unsafe here: it misses `65.6`
@@ -98,6 +100,12 @@ vecadvisor benchmark-db \
 Render the chart:
 
 ```bash
+vecadvisor plot-quality-bars \
+  docs/benchmarks/sift1m-anticorrelated-pgvector-benchmark.json \
+  --out docs/assets/sift1m-anticorrelated-quality-bars.svg \
+  --title "SIFT1M filtered pgvector quality" \
+  --subtitle "global selectivity 5%; exact top-40 local selectivity 0% across 16 queries"
+
 vecadvisor plot-benchmark \
   docs/benchmarks/sift1m-anticorrelated-pgvector-benchmark.json \
   --out docs/assets/sift1m-anticorrelated-pgvector-pareto.svg \

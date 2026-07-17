@@ -767,6 +767,43 @@ def test_plot_benchmark_cli_writes_pareto_svg(tmp_path: Path) -> None:
     assert "Pareto frontier" in svg
 
 
+def test_plot_quality_bars_cli_writes_grouped_svg(tmp_path: Path) -> None:
+    benchmark_path = tmp_path / "benchmark.json"
+    out_path = tmp_path / "quality.svg"
+    benchmark_path.write_text(json.dumps(_benchmark_plot_payload()), encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        [
+            "plot-quality-bars",
+            str(benchmark_path),
+            "--out",
+            str(out_path),
+            "--title",
+            "CLI Quality",
+            "--subtitle",
+            "global s=5%; local top-40 s=0%",
+            "--width",
+            "820",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    assert payload["output"] == {"path": str(out_path), "format": "svg"}
+    assert payload["chart"] == {
+        "title": "CLI Quality",
+        "width": 820,
+        "kind": "benchmark-quality-bars",
+    }
+
+    svg = out_path.read_text(encoding="utf-8")
+    assert "<svg" in svg
+    assert "CLI Quality" in svg
+    assert "global s=5%; local top-40 s=0%" in svg
+
+
 def test_benchmark_sweep_cli_outputs_grid_csv(tmp_path: Path) -> None:
     out_path = tmp_path / "synthetic-sweep.csv"
     runner = CliRunner()
@@ -864,6 +901,7 @@ def test_crossover_cli_analyzes_sweep_json(tmp_path: Path) -> None:
     assert payload["analysis"]["point_count"] == 2
     assert payload["analysis"]["prediction_match_rate"] == pytest.approx(0.5)
     assert payload["analysis"]["postfilter_failure_count"] == 1
+    assert payload["analysis"]["safe_advisor_on_postfilter_failures"] == 1
     assert payload["measured_crossovers"][0]["from_strategy"] == "postfilter"
     assert payload["measured_crossovers"][0]["to_strategy"] == "iterative"
     assert payload["predicted_crossovers"][0]["to_strategy"] == "exact"
@@ -981,11 +1019,13 @@ def test_plot_crossover_cli_writes_svg(tmp_path: Path) -> None:
     assert payload["output"] == {"path": str(out_path), "format": "svg"}
     assert payload["chart"]["title"] == "CLI Chart"
     assert payload["chart"]["points"] == 2
+    assert payload["chart"]["safe_advisor_on_postfilter_failures"] == 1
 
     svg = out_path.read_text(encoding="utf-8")
     assert "<svg" in svg
     assert "CLI Chart" in svg
     assert "measured crossover" in svg
+    assert "safe on postfilter failures" in svg
 
 
 def test_benchmark_db_cli_outputs_postgres_strategy_metrics(

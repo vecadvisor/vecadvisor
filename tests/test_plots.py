@@ -9,8 +9,10 @@ from vecadvisor.bench.crossover import analyze_sweep_payload
 from vecadvisor.bench.plots import (
     load_benchmark_payload,
     render_benchmark_pareto_svg,
+    render_benchmark_quality_svg,
     render_crossover_svg,
     write_benchmark_pareto_svg,
+    write_benchmark_quality_svg,
     write_crossover_svg,
 )
 
@@ -28,6 +30,8 @@ def test_render_crossover_svg_outputs_valid_chart(tmp_path) -> None:
     assert "p95 latency ms" in svg
     assert "recall@k" in svg
     assert "postfilter recall below target" in svg
+    assert "safe on postfilter failures" in svg
+    assert "model-simulation agreement" in svg
 
     path = tmp_path / "chart.svg"
     write_crossover_svg(analysis, path, title="Test Money Chart", width=900)
@@ -71,6 +75,7 @@ def test_render_benchmark_pareto_svg_outputs_valid_chart(tmp_path) -> None:
     assert "Test Pareto" in svg
     assert "Recall versus QPS Pareto" in svg
     assert "QPS, higher is better" in svg
+    assert "recall@k (linear)" in svg
     assert "Pareto frontier" in svg
     assert "returns-k below target" in svg
     assert "postfilter" in svg
@@ -83,6 +88,34 @@ def test_render_benchmark_pareto_svg_outputs_valid_chart(tmp_path) -> None:
     report_path.write_text('{"dataset": {}, "strategies": []}', encoding="utf-8")
     loaded = load_benchmark_payload(report_path)
     assert loaded["strategies"] == []
+
+
+def test_render_benchmark_quality_svg_outputs_grouped_bars(tmp_path) -> None:
+    payload = _benchmark_payload()
+
+    svg = render_benchmark_quality_svg(
+        payload,
+        title="Quality Bars",
+        subtitle="global s=5%; local top-40 s=0%",
+        width=820,
+    )
+
+    ET.fromstring(svg)
+    assert "Quality Bars" in svg
+    assert "global s=5%; local top-40 s=0%" in svg
+    assert "recall@k" in svg
+    assert "returns-k rate" in svg
+    assert "postfilter recall@k 0.400" in svg
+
+    path = tmp_path / "quality.svg"
+    write_benchmark_quality_svg(
+        payload,
+        path,
+        title="Quality Bars",
+        subtitle="global s=5%; local top-40 s=0%",
+        width=820,
+    )
+    assert path.read_text(encoding="utf-8") == svg
 
 
 def test_render_benchmark_pareto_svg_staggers_clustered_labels() -> None:

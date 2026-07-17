@@ -71,6 +71,7 @@ class CrossoverAnalysis:
     measured_crossovers: tuple[WinnerCrossover, ...]
     predicted_crossovers: tuple[WinnerCrossover, ...]
     postfilter_failure_count: int
+    safe_advisor_on_postfilter_failures: int
     points: tuple[SweepAnalysisPoint, ...]
     notes: tuple[str, ...] = ()
 
@@ -123,6 +124,19 @@ def analyze_sweep_payload(payload: Mapping[str, Any]) -> CrossoverAnalysis:
         predicted_winners.append(point.predicted_best)
     predicted_win_counts = dict(Counter(predicted_winners))
     postfilter_failure_count = sum(1 for point in points if point.postfilter_viable is False)
+    safe_advisor_on_postfilter_failures = sum(
+        1
+        for point in points
+        if point.postfilter_viable is False
+        and point.predicted_best is not None
+        and point.predicted_best != "postfilter"
+        and _strategy_viable(
+            point,
+            point.predicted_best,
+            recall_target=recall_target,
+            returns_k_target=returns_k_target,
+        )
+    )
 
     measured_regions = _winner_regions(points, kind="measured")
     predicted_regions = _winner_regions(points, kind="predicted")
@@ -142,11 +156,14 @@ def analyze_sweep_payload(payload: Mapping[str, Any]) -> CrossoverAnalysis:
         measured_crossovers=measured_crossovers,
         predicted_crossovers=predicted_crossovers,
         postfilter_failure_count=postfilter_failure_count,
+        safe_advisor_on_postfilter_failures=safe_advisor_on_postfilter_failures,
         points=points,
         notes=(
             "crossovers are estimated between adjacent sampled selectivity points",
             "estimated_selectivity uses the geometric midpoint for positive selectivities",
             "postfilter_failure_count uses the sweep recall and returns-k targets",
+            "safe_advisor_on_postfilter_failures counts failed-postfilter bins where "
+            "the predicted winner is not postfilter and meets quality targets",
         ),
     )
 
@@ -161,6 +178,9 @@ def crossover_analysis_to_json(analysis: CrossoverAnalysis) -> dict[str, object]
             "returns_k_target": analysis.returns_k_target,
             "prediction_match_rate": analysis.prediction_match_rate,
             "postfilter_failure_count": analysis.postfilter_failure_count,
+            "safe_advisor_on_postfilter_failures": (
+                analysis.safe_advisor_on_postfilter_failures
+            ),
         },
         "measured_win_counts": dict(analysis.measured_win_counts),
         "predicted_win_counts": dict(analysis.predicted_win_counts),
@@ -313,6 +333,22 @@ def _winner(point: SweepAnalysisPoint, *, kind: str) -> str | None:
     if kind == "predicted":
         return point.predicted_best
     raise ValueError("kind must be measured or predicted")
+
+
+def _strategy_viable(
+    point: SweepAnalysisPoint,
+    strategy_name: str,
+    *,
+    recall_target: float,
+    returns_k_target: float,
+) -> bool:
+    for strategy in point.strategies:
+        if strategy.strategy == strategy_name:
+            return (
+                strategy.recall_at_k >= recall_target
+                and strategy.returns_k_rate >= returns_k_target
+            )
+    return False
 
 
 def _region_from_points(

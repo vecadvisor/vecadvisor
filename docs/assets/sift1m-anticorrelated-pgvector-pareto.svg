@@ -45,13 +45,15 @@ text { font-family: "Segoe UI", Arial, sans-serif; fill: #111827; }
 <text class="tick" text-anchor="middle" x="825.24" y="502">33.84</text>
 <line class="grid" x1="86" y1="460.00" x2="880" y2="460.00"/>
 <text class="tick" text-anchor="end" x="78" y="464.00">0.0</text>
+<line class="grid" x1="86" y1="381.50" x2="880" y2="381.50"/>
+<text class="tick" text-anchor="end" x="78" y="385.50">0.2</text>
 <line class="grid" x1="86" y1="303.00" x2="880" y2="303.00"/>
 <text class="tick" text-anchor="end" x="78" y="307.00">0.5</text>
-<line class="grid" x1="86" y1="177.40" x2="880" y2="177.40"/>
-<text class="tick" text-anchor="end" x="78" y="181.40">0.9</text>
+<line class="grid" x1="86" y1="224.50" x2="880" y2="224.50"/>
+<text class="tick" text-anchor="end" x="78" y="228.50">0.8</text>
 <line class="grid" x1="86" y1="146.00" x2="880" y2="146.00"/>
 <text class="tick" text-anchor="end" x="78" y="150.00">1.0</text>
-<text class="axis-label" x="24" y="156" transform="rotate(-90 24 156)">recall@k</text>
+<text class="axis-label" x="24" y="156" transform="rotate(-90 24 156)">recall@k (linear)</text>
 <text class="axis-label" text-anchor="end" x="880" y="530">QPS, higher is better</text>
 <polyline class="frontier" points="173.15,146.00 825.24,191.14"><title>Pareto frontier</title></polyline>
 <circle class="pareto-point" cx="140.76" cy="146.00" r="7" fill="#2563eb" stroke="#2563eb"><title>exact: recall 1, QPS 3.32, p95 341 ms, returns-k 1</title></circle>

@@ -25,6 +25,7 @@ def test_analyze_sweep_payload_detects_crossovers_and_prediction_rate(tmp_path) 
     assert analysis.measured_win_counts == {"postfilter": 1, "iterative": 1}
     assert analysis.predicted_win_counts == {"postfilter": 1, "exact": 1}
     assert analysis.postfilter_failure_count == 1
+    assert analysis.safe_advisor_on_postfilter_failures == 1
 
     measured = analysis.measured_crossovers[0]
     assert measured.kind == "measured"
@@ -41,6 +42,7 @@ def test_analyze_sweep_payload_detects_crossovers_and_prediction_rate(tmp_path) 
     write_crossover_analysis(analysis, json_path)
     written = json.loads(json_path.read_text(encoding="utf-8"))
     assert written["analysis"]["postfilter_failure_count"] == 1
+    assert written["analysis"]["safe_advisor_on_postfilter_failures"] == 1
     assert written["measured_crossovers"][0]["to_strategy"] == "iterative"
 
     loaded = load_sweep_payload(json_path)
@@ -54,6 +56,7 @@ def test_crossover_analysis_json_shape() -> None:
     payload = crossover_analysis_to_json(analysis)
 
     assert payload["analysis"]["prediction_match_rate"] == pytest.approx(0.5)
+    assert payload["analysis"]["safe_advisor_on_postfilter_failures"] == 1
     assert payload["points"][1]["postfilter_viable"] is False
     assert {row["kind"] for row in payload["regions"]} == {"measured", "predicted"}
 

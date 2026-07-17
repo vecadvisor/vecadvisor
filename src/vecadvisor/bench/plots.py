@@ -12,6 +12,7 @@ from .crossover import CrossoverAnalysis, SweepAnalysisPoint, WinnerCrossover
 
 DEFAULT_CHART_TITLE = "VecAdvisor crossover"
 DEFAULT_PARETO_TITLE = "VecAdvisor recall/QPS Pareto"
+DEFAULT_QUALITY_TITLE = "VecAdvisor benchmark quality"
 DEFAULT_CHART_WIDTH = 1120
 DEFAULT_PARETO_WIDTH = 920
 PANEL_HEIGHT = 430
@@ -33,6 +34,9 @@ PARETO_HEIGHT = 560
 PARETO_TOP = 124
 PARETO_BOTTOM = 78
 PARETO_INNER_Y_PAD = 22
+QUALITY_HEIGHT = 520
+QUALITY_TOP = 136
+QUALITY_BOTTOM = 92
 
 
 @dataclass(frozen=True)
@@ -222,7 +226,7 @@ def render_benchmark_pareto_svg(
         ),
         _recall_pareto_axis(plot_width=plot_width, plot_height=plot_height),
         f'<text class="axis-label" x="24" y="{PARETO_TOP + 32}" '
-        f'transform="rotate(-90 24 {PARETO_TOP + 32})">recall@k</text>',
+        f'transform="rotate(-90 24 {PARETO_TOP + 32})">recall@k (linear)</text>',
         f'<text class="axis-label" text-anchor="end" x="{PLOT_LEFT + plot_width}" '
         f'y="{PARETO_TOP + plot_height + 48}">QPS, higher is better</text>',
         _pareto_frontier_svg(
@@ -267,6 +271,93 @@ def write_benchmark_pareto_svg(
     )
 
 
+def render_benchmark_quality_svg(
+    payload: Mapping[str, Any],
+    *,
+    title: str = DEFAULT_QUALITY_TITLE,
+    subtitle: str | None = None,
+    width: int = DEFAULT_PARETO_WIDTH,
+) -> str:
+    """Render a grouped recall/returns-k quality chart from benchmark JSON."""
+
+    if width < 700:
+        raise ValueError("width must be at least 700")
+    dataset = _mapping_value(payload, "dataset")
+    ground_truth = _optional_mapping_value(payload, "ground_truth")
+    points = _benchmark_pareto_points(payload)
+    if not points:
+        raise ValueError("benchmark report must contain at least one strategy")
+
+    plot_width = width - PLOT_LEFT - PLOT_RIGHT
+    plot_height = QUALITY_HEIGHT - QUALITY_TOP - QUALITY_BOTTOM
+    dataset_id = str(dataset.get("id", "unknown"))
+    rows = dataset.get("rows", "unknown")
+    queries = dataset.get("queries", "unknown")
+    k = ground_truth.get("k", "unknown") if ground_truth is not None else "unknown"
+    metric = ground_truth.get("metric", "unknown") if ground_truth is not None else "unknown"
+    chart_subtitle = (
+        subtitle
+        if subtitle is not None
+        else (
+            f"dataset: {dataset_id}  |  rows: {rows}  |  queries: {queries}"
+            f"  |  k: {k}  |  metric: {metric}"
+        )
+    )
+
+    parts = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        (
+            f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" '
+            f'height="{QUALITY_HEIGHT}" viewBox="0 0 {width} {QUALITY_HEIGHT}" '
+            'role="img" aria-labelledby="title desc">'
+        ),
+        f"<title id=\"title\">{_escape(title)}</title>",
+        (
+            f'<desc id="desc">Recall and returns-k grouped bar chart for '
+            f'{_escape(dataset_id)} benchmark results.</desc>'
+        ),
+        _quality_style_block(),
+        f'<rect width="{width}" height="{QUALITY_HEIGHT}" fill="#ffffff"/>',
+        f'<text class="chart-title" x="{PLOT_LEFT}" y="38">{_escape(title)}</text>',
+        f'<text class="summary" x="{PLOT_LEFT}" y="64">{_escape(chart_subtitle)}</text>',
+        _quality_legend(width=width),
+        _plot_frame(
+            x=PLOT_LEFT,
+            y=QUALITY_TOP,
+            width=plot_width,
+            height=plot_height,
+        ),
+        _quality_axis(plot_width=plot_width, plot_height=plot_height),
+        (
+            f'<text class="axis-label" x="24" y="{QUALITY_TOP + 34}" '
+            f'transform="rotate(-90 24 {QUALITY_TOP + 34})">quality score</text>'
+        ),
+        _quality_bars_svg(points, plot_width=plot_width, plot_height=plot_height),
+        (
+            f'<text class="footnote" x="{PLOT_LEFT}" y="{QUALITY_HEIGHT - 24}">'
+            "Higher is better. Solid bars show recall@k; outlined bars show returns-k rate."
+            "</text>"
+        ),
+        "</svg>",
+    ]
+    return "\n".join(parts) + "\n"
+
+
+def write_benchmark_quality_svg(
+    payload: Mapping[str, Any],
+    path: Path,
+    *,
+    title: str = DEFAULT_QUALITY_TITLE,
+    subtitle: str | None = None,
+    width: int = DEFAULT_PARETO_WIDTH,
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        render_benchmark_quality_svg(payload, title=title, subtitle=subtitle, width=width),
+        encoding="utf-8",
+    )
+
+
 def _benchmark_pareto_points(payload: Mapping[str, Any]) -> tuple[BenchmarkParetoPoint, ...]:
     points: list[BenchmarkParetoPoint] = []
     for raw_strategy in _sequence_value(payload, "strategies"):
@@ -286,6 +377,133 @@ def _benchmark_pareto_points(payload: Mapping[str, Any]) -> tuple[BenchmarkParet
             )
         )
     return tuple(points)
+
+
+def _quality_style_block() -> str:
+    return """<style>
+text { font-family: "Segoe UI", Arial, sans-serif; fill: #111827; }
+.chart-title { font-size: 24px; font-weight: 700; }
+.summary, .legend, .footnote { font-size: 12px; fill: #4b5563; }
+.axis-label, .tick { font-size: 11px; fill: #6b7280; }
+.frame { fill: #ffffff; stroke: #d1d5db; stroke-width: 1; }
+.grid { stroke: #e5e7eb; stroke-width: 1; }
+.bar { stroke-width: 1.7; }
+.value-label { font-size: 11px; font-weight: 600; fill: #111827; }
+.strategy-label { font-size: 12px; font-weight: 600; }
+</style>"""
+
+
+def _quality_legend(*, width: int) -> str:
+    y = 94
+    x = PLOT_LEFT
+    return "\n".join(
+        (
+            f'<rect class="bar" x="{x}" y="{y - 9}" width="18" height="12" '
+            'fill="#111827" stroke="#111827"/>',
+            f'<text class="legend" x="{x + 26}" y="{y + 2}">recall@k</text>',
+            f'<rect class="bar" x="{x + 112}" y="{y - 9}" width="18" height="12" '
+            'fill="#ffffff" stroke="#111827"/>',
+            f'<text class="legend" x="{x + 138}" y="{y + 2}">returns-k rate</text>',
+            (
+                f'<text class="legend" text-anchor="end" x="{width - PLOT_RIGHT}" '
+                f'y="{y + 2}">linear 0-1 scale</text>'
+            ),
+        )
+    )
+
+
+def _quality_axis(*, plot_width: int, plot_height: int) -> str:
+    parts: list[str] = []
+    for tick in (0.0, 0.25, 0.5, 0.75, 1.0):
+        y = _quality_y(tick, plot_height=plot_height)
+        parts.append(
+            f'<line class="grid" x1="{PLOT_LEFT}" y1="{y:.2f}" '
+            f'x2="{PLOT_LEFT + plot_width}" y2="{y:.2f}"/>'
+        )
+        parts.append(
+            f'<text class="tick" text-anchor="end" x="{PLOT_LEFT - 8}" y="{y + 4:.2f}">'
+            f"{tick:.2g}</text>"
+        )
+    return "\n".join(parts)
+
+
+def _quality_bars_svg(
+    points: tuple[BenchmarkParetoPoint, ...],
+    *,
+    plot_width: int,
+    plot_height: int,
+) -> str:
+    count = len(points)
+    group_width = plot_width / max(count, 1)
+    bar_width = min(34.0, max(16.0, group_width * 0.22))
+    gap = max(4.0, bar_width * 0.18)
+    parts: list[str] = []
+    for index, point in enumerate(points):
+        center_x = PLOT_LEFT + group_width * (index + 0.5)
+        recall_x = center_x - bar_width - gap / 2.0
+        returns_x = center_x + gap / 2.0
+        color = _strategy_color(point.strategy)
+        parts.extend(
+            _quality_bar_pair(
+                point=point,
+                recall_x=recall_x,
+                returns_x=returns_x,
+                bar_width=bar_width,
+                color=color,
+                plot_height=plot_height,
+            )
+        )
+        parts.append(
+            f'<text class="strategy-label" text-anchor="middle" x="{center_x:.2f}" '
+            f'y="{QUALITY_TOP + plot_height + 25}">{_escape(point.strategy)}</text>'
+        )
+    return "\n".join(parts)
+
+
+def _quality_bar_pair(
+    *,
+    point: BenchmarkParetoPoint,
+    recall_x: float,
+    returns_x: float,
+    bar_width: float,
+    color: str,
+    plot_height: int,
+) -> list[str]:
+    recall_y = _quality_y(point.recall_at_k, plot_height=plot_height)
+    returns_y = _quality_y(point.returns_k_rate, plot_height=plot_height)
+    baseline = _quality_y(0.0, plot_height=plot_height)
+    recall_h = max(1.0, baseline - recall_y)
+    returns_h = max(1.0, baseline - returns_y)
+    return [
+        (
+            f'<rect class="bar" x="{recall_x:.2f}" y="{recall_y:.2f}" '
+            f'width="{bar_width:.2f}" height="{recall_h:.2f}" fill="{color}" '
+            f'stroke="{color}"><title>{_escape(point.strategy)} recall@k '
+            f'{point.recall_at_k:.3f}</title></rect>'
+        ),
+        (
+            f'<rect class="bar" x="{returns_x:.2f}" y="{returns_y:.2f}" '
+            f'width="{bar_width:.2f}" height="{returns_h:.2f}" fill="#ffffff" '
+            f'stroke="{color}"><title>{_escape(point.strategy)} returns-k '
+            f'{point.returns_k_rate:.3f}</title></rect>'
+        ),
+        (
+            f'<text class="value-label" text-anchor="middle" '
+            f'x="{recall_x + bar_width / 2.0:.2f}" y="{max(QUALITY_TOP + 13, recall_y - 6):.2f}">'
+            f"{point.recall_at_k:.2f}</text>"
+        ),
+        (
+            f'<text class="value-label" text-anchor="middle" '
+            f'x="{returns_x + bar_width / 2.0:.2f}" '
+            f'y="{max(QUALITY_TOP + 13, returns_y - 6):.2f}">'
+            f"{point.returns_k_rate:.2f}</text>"
+        ),
+    ]
+
+
+def _quality_y(value: float, *, plot_height: int) -> float:
+    clamped = max(0.0, min(1.0, value))
+    return QUALITY_TOP + plot_height - clamped * plot_height
 
 
 def _pareto_style_block() -> str:
@@ -357,7 +575,7 @@ def _qps_axis(
 
 def _recall_pareto_axis(*, plot_width: int, plot_height: int) -> str:
     parts: list[str] = []
-    for tick in (0.0, 0.5, 0.9, 1.0):
+    for tick in (0.0, 0.25, 0.5, 0.75, 1.0):
         y = _pareto_recall_y(tick, plot_height=plot_height)
         parts.append(
             f'<line class="grid" x1="{PLOT_LEFT}" y1="{y:.2f}" '
@@ -631,16 +849,30 @@ def _header(
     strategy_names: tuple[str, ...],
     width: int,
 ) -> str:
+    safety_text = (
+        "safe on postfilter failures: n/a"
+        if analysis.postfilter_failure_count == 0
+        else (
+            "safe on postfilter failures: "
+            f"{analysis.safe_advisor_on_postfilter_failures}/"
+            f"{analysis.postfilter_failure_count}"
+        )
+    )
+    match_label = (
+        "model-simulation agreement"
+        if analysis.backend == "synthetic"
+        else "latency-winner match"
+    )
     match_text = (
-        "prediction match: n/a"
+        f"{match_label}: n/a"
         if analysis.prediction_match_rate is None
-        else f"prediction match: {analysis.prediction_match_rate * 100:.1f}%"
+        else f"{match_label}: {analysis.prediction_match_rate * 100:.1f}%"
     )
     summary = (
         f"backend: {analysis.backend}  |  points: {analysis.point_count}  |  "
         f"recall target: {analysis.recall_target:.3g}  |  "
-        f"returns-k target: {analysis.returns_k_target:.3g}  |  {match_text}  |  "
-        f"postfilter failures: {analysis.postfilter_failure_count}"
+        f"returns-k target: {analysis.returns_k_target:.3g}  |  {safety_text}  |  "
+        f"{match_text}"
     )
     legend_x = PLOT_LEFT
     legend_y = 92

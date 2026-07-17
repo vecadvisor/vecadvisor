@@ -22,7 +22,7 @@ text { font-family: "Segoe UI", Arial, sans-serif; fill: #111827; }
 </style>
 <rect width="1120" height="1492" fill="#ffffff"/>
 <text class="chart-title" x="86" y="38">VecAdvisor synthetic crossover</text>
-<text class="summary" x="86" y="64">backend: synthetic  |  points: 12  |  recall target: 0.9  |  returns-k target: 1  |  prediction match: 100.0%  |  postfilter failures: 12</text>
+<text class="summary" x="86" y="64">backend: synthetic  |  points: 12  |  recall target: 0.9  |  returns-k target: 1  |  safe on postfilter failures: 12/12  |  model-simulation agreement: 100.0%</text>
 <circle cx="86" cy="92" r="5" fill="#2563eb"/>
 <text class="legend" x="96" y="96">exact</text>
 <circle cx="169" cy="92" r="5" fill="#dc2626"/>

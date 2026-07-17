@@ -27,6 +27,8 @@ VecAdvisor alpha.
   scalar filter.
 - `sift1m-anticorrelated-pgvector-benchmark.md`: summary and reproduction
   commands for the SIFT1M recall-collapse artifact.
+- `../assets/sift1m-anticorrelated-quality-bars.svg`: grouped recall/returns-k
+  chart for the SIFT1M recall-collapse artifact.
 
 These files are intentionally small enough to regenerate during local
 development. Synthetic files validate cost-model behavior and safety checks.

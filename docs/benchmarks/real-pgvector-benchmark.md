@@ -77,8 +77,9 @@ vecadvisor plot-benchmark \
 
 The companion files `real-pgvector-calibration.json`,
 `real-pgvector-sweep.json`, and `real-pgvector-crossover.svg` are a smaller
-actual-Postgres sweep for local-selectivity validation. In that sweep,
-post-filter HNSW misses recall or returns-k targets in all four bins, while
-the current calibrated predictor matches the measured winner in two of four
-bins. This is useful evidence and also a calibration-improvement target, not a
-claim that the model is finished.
+actual-Postgres sweep for local-selectivity validation. In the refreshed
+9-point sweep (`selectivity = 0.05, 0.1, 0.2`; `correlation = -0.6, 0, 0.6`),
+post-filter HNSW misses recall or returns-k targets in all 9 bins. The
+advisor avoids every failed postfilter plan with a recall-safe recommendation
+(`9/9`). It matches the exact measured latency winner in `4/9` bins; that is a
+secondary calibration target, not the primary safety claim.

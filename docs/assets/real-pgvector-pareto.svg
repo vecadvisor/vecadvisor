@@ -11,7 +11,14 @@ text { font-family: "Segoe UI", Arial, sans-serif; fill: #111827; }
 .grid { stroke: #e5e7eb; stroke-width: 1; }
 .frontier { fill: none; stroke: #111827; stroke-width: 1.8; stroke-dasharray: 6 4; }
 .pareto-point { stroke-width: 2; }
-.point-label { font-size: 12px; font-weight: 600; }
+.point-label {
+  font-size: 12px;
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
 .under-return { stroke: #991b1b; stroke-width: 2; fill: none; }
 </style>
 <rect width="920" height="560" fill="#ffffff"/>
@@ -30,34 +37,34 @@ text { font-family: "Segoe UI", Arial, sans-serif; fill: #111827; }
 <line class="frontier" x1="730" y1="92" x2="770" y2="92"/>
 <text class="legend" x="778" y="96">Pareto frontier</text>
 <rect class="frame" x="86" y="124" width="794" height="358" rx="4"/>
-<line class="grid" x1="86.00" y1="124" x2="86.00" y2="482"/>
-<text class="tick" text-anchor="middle" x="86.00" y="502">10.03</text>
+<line class="grid" x1="140.76" y1="124" x2="140.76" y2="482"/>
+<text class="tick" text-anchor="middle" x="140.76" y="502">10.03</text>
 <line class="grid" x1="483.00" y1="124" x2="483.00" y2="482"/>
 <text class="tick" text-anchor="middle" x="483.00" y="502">72.62</text>
-<line class="grid" x1="880.00" y1="124" x2="880.00" y2="482"/>
-<text class="tick" text-anchor="middle" x="880.00" y="502">525.8</text>
-<line class="grid" x1="86" y1="482.00" x2="880" y2="482.00"/>
-<text class="tick" text-anchor="end" x="78" y="486.00">0.0</text>
+<line class="grid" x1="825.24" y1="124" x2="825.24" y2="482"/>
+<text class="tick" text-anchor="middle" x="825.24" y="502">525.8</text>
+<line class="grid" x1="86" y1="460.00" x2="880" y2="460.00"/>
+<text class="tick" text-anchor="end" x="78" y="464.00">0.0</text>
 <line class="grid" x1="86" y1="303.00" x2="880" y2="303.00"/>
 <text class="tick" text-anchor="end" x="78" y="307.00">0.5</text>
-<line class="grid" x1="86" y1="159.80" x2="880" y2="159.80"/>
-<text class="tick" text-anchor="end" x="78" y="163.80">0.9</text>
-<line class="grid" x1="86" y1="124.00" x2="880" y2="124.00"/>
-<text class="tick" text-anchor="end" x="78" y="128.00">1.0</text>
+<line class="grid" x1="86" y1="177.40" x2="880" y2="177.40"/>
+<text class="tick" text-anchor="end" x="78" y="181.40">0.9</text>
+<line class="grid" x1="86" y1="146.00" x2="880" y2="146.00"/>
+<text class="tick" text-anchor="end" x="78" y="150.00">1.0</text>
 <text class="axis-label" x="24" y="156" transform="rotate(-90 24 156)">recall@k</text>
 <text class="axis-label" text-anchor="end" x="880" y="530">QPS, higher is better</text>
 
-<circle class="pareto-point" cx="880.00" cy="124.00" r="7" fill="#2563eb" stroke="#2563eb"><title>exact: recall 1, QPS 526, p95 2.74 ms, returns-k 1</title></circle>
-<text class="point-label" x="800.00" y="138.00">exact</text>
-<circle class="pareto-point" cx="86.00" cy="405.93" r="7" fill="#ffffff" stroke="#dc2626"><title>postfilter: recall 0.212, QPS 10, p95 178 ms, returns-k 0</title></circle>
-<text class="point-label" x="96.00" y="397.93">postfilter</text>
-<line class="under-return" x1="80.00" y1="399.93" x2="92.00" y2="411.93"><title>returns-k below target</title></line>
-<line class="under-return" x1="92.00" y1="399.93" x2="80.00" y2="411.93"><title>returns-k below target</title></line>
-<circle class="pareto-point" cx="287.61" cy="137.43" r="7" fill="#059669" stroke="#059669"><title>iterative: recall 0.963, QPS 27.4, p95 40.6 ms, returns-k 1</title></circle>
-<text class="point-label" x="297.61" y="138.00">iterative</text>
-<circle class="pareto-point" cx="296.91" cy="124.00" r="7" fill="#7c3aed" stroke="#7c3aed"><title>partial: recall 1, QPS 28.7, p95 40.2 ms, returns-k 1</title></circle>
-<text class="point-label" x="306.91" y="138.00">partial</text>
-<circle class="pareto-point" cx="282.69" cy="124.00" r="7" fill="#d97706" stroke="#d97706"><title>partition: recall 1, QPS 26.7, p95 41.6 ms, returns-k 1</title></circle>
-<text class="point-label" x="292.69" y="138.00">partition</text>
+<circle class="pareto-point" cx="310.32" cy="146.00" r="7" fill="#d97706" stroke="#d97706"><title>partition: recall 1, QPS 26.7, p95 41.6 ms, returns-k 1</title></circle>
+<circle class="pareto-point" cx="322.58" cy="146.00" r="7" fill="#7c3aed" stroke="#7c3aed"><title>partial: recall 1, QPS 28.7, p95 40.2 ms, returns-k 1</title></circle>
+<circle class="pareto-point" cx="825.24" cy="146.00" r="7" fill="#2563eb" stroke="#2563eb"><title>exact: recall 1, QPS 526, p95 2.74 ms, returns-k 1</title></circle>
+<circle class="pareto-point" cx="314.56" cy="157.78" r="7" fill="#059669" stroke="#059669"><title>iterative: recall 0.963, QPS 27.4, p95 40.6 ms, returns-k 1</title></circle>
+<circle class="pareto-point" cx="140.76" cy="393.27" r="7" fill="#ffffff" stroke="#dc2626"><title>postfilter: recall 0.212, QPS 10, p95 178 ms, returns-k 0</title></circle>
+<line class="under-return" x1="134.76" y1="387.27" x2="146.76" y2="399.27"><title>returns-k below target</title></line>
+<line class="under-return" x1="146.76" y1="387.27" x2="134.76" y2="399.27"><title>returns-k below target</title></line>
+<text class="point-label" text-anchor="start" x="322.32" y="168.00">partition</text>
+<text class="point-label" text-anchor="start" x="334.58" y="200.00">partial</text>
+<text class="point-label" text-anchor="end" x="813.24" y="168.00">exact</text>
+<text class="point-label" text-anchor="start" x="326.56" y="227.78">iterative</text>
+<text class="point-label" text-anchor="start" x="152.76" y="383.27">postfilter</text>
 <text class="footnote" x="86" y="538">Each point is one measured strategy. Hollow markers under-return for at least one query. Frontier ignores dominated points.</text>
 </svg>

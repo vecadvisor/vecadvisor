@@ -14,13 +14,13 @@ DEFAULT_CHART_TITLE = "VecAdvisor crossover"
 DEFAULT_PARETO_TITLE = "VecAdvisor recall/QPS Pareto"
 DEFAULT_CHART_WIDTH = 1120
 DEFAULT_PARETO_WIDTH = 920
-PANEL_HEIGHT = 340
+PANEL_HEIGHT = 430
 HEADER_HEIGHT = 130
-FOOTER_HEIGHT = 48
+FOOTER_HEIGHT = 72
 PLOT_LEFT = 86
 PLOT_RIGHT = 40
-LATENCY_HEIGHT = 138
-RECALL_HEIGHT = 74
+LATENCY_HEIGHT = 150
+RECALL_HEIGHT = 88
 STRATEGY_COLORS = {
     "exact": "#2563eb",
     "postfilter": "#dc2626",
@@ -32,6 +32,7 @@ FALLBACK_COLORS = ("#0891b2", "#be123c", "#4d7c0f", "#9333ea", "#0f766e")
 PARETO_HEIGHT = 560
 PARETO_TOP = 124
 PARETO_BOTTOM = 78
+PARETO_INNER_Y_PAD = 22
 
 
 @dataclass(frozen=True)
@@ -42,6 +43,24 @@ class BenchmarkParetoPoint:
     qps: float
     latency_ms_p95: float
     query_count: int
+
+
+@dataclass(frozen=True)
+class _ParetoPointPlacement:
+    point: BenchmarkParetoPoint
+    point_x: float
+    point_y: float
+    label_x: float
+    label_y: float
+    label_anchor: str
+
+
+@dataclass(frozen=True)
+class _TextBox:
+    left: float
+    top: float
+    right: float
+    bottom: float
 
 
 def render_crossover_svg(
@@ -107,7 +126,7 @@ def render_crossover_svg(
         )
 
     parts.append(
-        f'<text class="footnote" x="{PLOT_LEFT}" y="{height - 18}">'
+        f'<text class="footnote" x="{PLOT_LEFT}" y="{height - 32}">'
         "Solid lines show p95 latency. Lower thin lines show recall@k. "
         "Squares are measured winners; circles are predicted winners.</text>"
     )
@@ -215,16 +234,15 @@ def render_benchmark_pareto_svg(
         ),
     ]
 
-    for point in points:
-        parts.append(
-            _pareto_point_svg(
-                point,
-                x_min=x_min,
-                x_max=x_max,
-                plot_width=plot_width,
-                plot_height=plot_height,
-            )
+    parts.append(
+        _pareto_points_svg(
+            points,
+            x_min=x_min,
+            x_max=x_max,
+            plot_width=plot_width,
+            plot_height=plot_height,
         )
+    )
 
     parts.append(
         f'<text class="footnote" x="{PLOT_LEFT}" y="{PARETO_HEIGHT - 22}">'
@@ -280,7 +298,14 @@ text { font-family: "Segoe UI", Arial, sans-serif; fill: #111827; }
 .grid { stroke: #e5e7eb; stroke-width: 1; }
 .frontier { fill: none; stroke: #111827; stroke-width: 1.8; stroke-dasharray: 6 4; }
 .pareto-point { stroke-width: 2; }
-.point-label { font-size: 12px; font-weight: 600; }
+.point-label {
+  font-size: 12px;
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
 .under-return { stroke: #991b1b; stroke-width: 2; fill: none; }
 </style>"""
 
@@ -371,31 +396,32 @@ def _pareto_frontier_svg(
 
 
 def _pareto_point_svg(
-    point: BenchmarkParetoPoint,
+    placement: _ParetoPointPlacement,
     *,
-    x_min: float,
-    x_max: float,
-    plot_width: int,
-    plot_height: int,
+    label: bool,
 ) -> str:
-    x = _qps_x(point.qps, x_min=x_min, x_max=x_max, plot_width=plot_width)
-    y = _pareto_recall_y(point.recall_at_k, plot_height=plot_height)
+    point = placement.point
+    if label:
+        return (
+            f'<text class="point-label" text-anchor="{placement.label_anchor}" '
+            f'x="{placement.label_x:.2f}" y="{placement.label_y:.2f}">'
+            f"{_escape(point.strategy)}</text>"
+        )
     color = _strategy_color(point.strategy)
     fill = color if point.returns_k_rate >= 1.0 else "#ffffff"
-    label_x = min(x + 10, PLOT_LEFT + plot_width - 80)
-    label_y = max(y - 8, PARETO_TOP + 14)
     title = (
         f"{point.strategy}: recall {point.recall_at_k:.3g}, "
         f"QPS {point.qps:.3g}, p95 {point.latency_ms_p95:.3g} ms, "
         f"returns-k {point.returns_k_rate:.3g}"
     )
     parts = [
-        f'<circle class="pareto-point" cx="{x:.2f}" cy="{y:.2f}" r="7" '
+        f'<circle class="pareto-point" cx="{placement.point_x:.2f}" '
+        f'cy="{placement.point_y:.2f}" r="7" '
         f'fill="{fill}" stroke="{color}"><title>{_escape(title)}</title></circle>',
-        f'<text class="point-label" x="{label_x:.2f}" y="{label_y:.2f}">'
-        f"{_escape(point.strategy)}</text>",
     ]
     if point.returns_k_rate < 1.0:
+        x = placement.point_x
+        y = placement.point_y
         parts.append(
             f'<line class="under-return" x1="{x - 6:.2f}" y1="{y - 6:.2f}" '
             f'x2="{x + 6:.2f}" y2="{y + 6:.2f}"><title>returns-k below target'
@@ -407,6 +433,140 @@ def _pareto_point_svg(
             "</title></line>"
         )
     return "\n".join(parts)
+
+
+def _pareto_points_svg(
+    points: tuple[BenchmarkParetoPoint, ...],
+    *,
+    x_min: float,
+    x_max: float,
+    plot_width: int,
+    plot_height: int,
+) -> str:
+    placements = _pareto_point_placements(
+        points,
+        x_min=x_min,
+        x_max=x_max,
+        plot_width=plot_width,
+        plot_height=plot_height,
+    )
+    markers = [_pareto_point_svg(placement, label=False) for placement in placements]
+    labels = [_pareto_point_svg(placement, label=True) for placement in placements]
+    return "\n".join((*markers, *labels))
+
+
+def _pareto_point_placements(
+    points: tuple[BenchmarkParetoPoint, ...],
+    *,
+    x_min: float,
+    x_max: float,
+    plot_width: int,
+    plot_height: int,
+) -> tuple[_ParetoPointPlacement, ...]:
+    plot_left = float(PLOT_LEFT)
+    plot_right = float(PLOT_LEFT + plot_width)
+    plot_top = float(PARETO_TOP)
+    plot_bottom = float(PARETO_TOP + plot_height)
+    boxes: list[_TextBox] = []
+    placements: list[_ParetoPointPlacement] = []
+    raw: list[tuple[BenchmarkParetoPoint, float, float, float, float, str, float]] = []
+
+    for point in points:
+        point_x = _qps_x(point.qps, x_min=x_min, x_max=x_max, plot_width=plot_width)
+        point_y = _pareto_recall_y(point.recall_at_k, plot_height=plot_height)
+        label_width = _label_width(point.strategy)
+        anchor = "end" if point_x > plot_right - 140 else "start"
+        label_x = point_x - 12 if anchor == "end" else point_x + 12
+        label_x = _clamp_label_x(
+            label_x,
+            label_width=label_width,
+            anchor=anchor,
+            plot_left=plot_left,
+            plot_right=plot_right,
+        )
+        label_y = point_y + 22 if point_y < plot_top + 40 else point_y - 10
+        label_y = max(plot_top + 16, min(plot_bottom - 8, label_y))
+        raw.append((point, point_x, point_y, label_x, label_y, anchor, label_width))
+
+    for point, point_x, point_y, label_x, label_y, anchor, label_width in sorted(
+        raw,
+        key=lambda item: (item[4], item[3]),
+    ):
+        chosen_y = label_y
+        for offset in (0, 16, 32, 48, -16, -32, 64, -48, 80, -64):
+            candidate_y = max(plot_top + 16, min(plot_bottom - 8, label_y + offset))
+            box = _label_box(
+                label_x,
+                candidate_y,
+                label_width=label_width,
+                anchor=anchor,
+            )
+            if not any(_boxes_overlap(box, existing) for existing in boxes):
+                chosen_y = candidate_y
+                boxes.append(box)
+                break
+        else:
+            boxes.append(
+                _label_box(
+                    label_x,
+                    chosen_y,
+                    label_width=label_width,
+                    anchor=anchor,
+                )
+            )
+        placements.append(
+            _ParetoPointPlacement(
+                point=point,
+                point_x=point_x,
+                point_y=point_y,
+                label_x=label_x,
+                label_y=chosen_y,
+                label_anchor=anchor,
+            )
+        )
+    return tuple(placements)
+
+
+def _label_width(label: str) -> float:
+    return max(40.0, float(len(label)) * 7.0 + 6.0)
+
+
+def _clamp_label_x(
+    value: float,
+    *,
+    label_width: float,
+    anchor: str,
+    plot_left: float,
+    plot_right: float,
+) -> float:
+    if anchor == "end":
+        return min(plot_right, max(plot_left + label_width, value))
+    return max(plot_left, min(plot_right - label_width, value))
+
+
+def _label_box(
+    label_x: float,
+    label_y: float,
+    *,
+    label_width: float,
+    anchor: str,
+) -> _TextBox:
+    left = label_x - label_width if anchor == "end" else label_x
+    return _TextBox(
+        left=left - 3.0,
+        top=label_y - 13.0,
+        right=left + label_width + 3.0,
+        bottom=label_y + 5.0,
+    )
+
+
+def _boxes_overlap(first: _TextBox, second: _TextBox) -> bool:
+    return not (
+        first.right < second.left
+        or first.left > second.right
+        or first.bottom < second.top
+        or first.top > second.bottom
+    )
 
 
 def _pareto_frontier(
@@ -431,7 +591,10 @@ def _qps_bounds(points: tuple[BenchmarkParetoPoint, ...]) -> tuple[float, float]
     upper = max(values)
     if lower == upper:
         return max(lower / 2.0, 1e-9), max(upper * 2.0, 1e-8)
-    return lower, upper
+    lo = math.log10(max(lower, 1e-9))
+    hi = math.log10(max(upper, lower * 1.01))
+    padding = max((hi - lo) * 0.08, 0.025)
+    return 10 ** (lo - padding), 10 ** (hi + padding)
 
 
 def _qps_ticks(
@@ -443,7 +606,7 @@ def _qps_ticks(
     unique = tuple(sorted({point.qps for point in points}))
     if len(unique) <= 4:
         return unique
-    return (x_min, _midpoint_positive(x_min, x_max), x_max)
+    return (unique[0], _midpoint_positive(unique[0], unique[-1]), unique[-1])
 
 
 def _qps_x(value: float, *, x_min: float, x_max: float, plot_width: int) -> float:
@@ -456,7 +619,9 @@ def _qps_x(value: float, *, x_min: float, x_max: float, plot_width: int) -> floa
 
 
 def _pareto_recall_y(value: float, *, plot_height: int) -> float:
-    return PARETO_TOP + plot_height - max(0.0, min(1.0, value)) * plot_height
+    inner_height = max(float(plot_height - 2 * PARETO_INNER_Y_PAD), 1.0)
+    clamped = max(0.0, min(1.0, value))
+    return PARETO_TOP + PARETO_INNER_Y_PAD + (1.0 - clamped) * inner_height
 
 
 def _header(

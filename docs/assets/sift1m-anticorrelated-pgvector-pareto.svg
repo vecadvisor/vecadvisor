@@ -23,7 +23,7 @@ text { font-family: "Segoe UI", Arial, sans-serif; fill: #111827; }
 </style>
 <rect width="920" height="560" fill="#ffffff"/>
 <text class="chart-title" x="86" y="38">VecAdvisor SIFT1M anti-correlated pgvector Pareto</text>
-<text class="summary" x="86" y="64">dataset: postgres-file  |  rows: 1000000  |  queries: 16  |  k: 10  |  metric: l2</text>
+<text class="summary" x="86" y="64">global selectivity 5%; exact top-40 local selectivity 0% across 16 queries</text>
 <circle cx="86" cy="92" r="5" fill="#2563eb"/>
 <text class="legend" x="96" y="96">exact</text>
 <circle cx="171" cy="92" r="5" fill="#dc2626"/>

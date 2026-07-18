@@ -81,5 +81,7 @@ actual-Postgres sweep for local-selectivity validation. In the refreshed
 9-point sweep (`selectivity = 0.05, 0.1, 0.2`; `correlation = -0.6, 0, 0.6`),
 post-filter HNSW misses recall or returns-k targets in all 9 bins. The
 advisor avoids every failed postfilter plan with a recall-safe recommendation
-(`9/9`). It matches the exact measured latency winner in `4/9` bins; that is a
-secondary calibration target, not the primary safety claim.
+(`9/9`). It matches the exact measured latency winner in `4/9` bins; in the
+remaining bins it chooses a recall-safe, slightly slower plan. That
+latency-winner match rate is a secondary calibration target, not the primary
+safety claim.

@@ -68,11 +68,17 @@ def test_render_crossover_svg_validates_width() -> None:
 def test_render_benchmark_pareto_svg_outputs_valid_chart(tmp_path) -> None:
     payload = _benchmark_payload()
 
-    svg = render_benchmark_pareto_svg(payload, title="Test Pareto", width=820)
+    svg = render_benchmark_pareto_svg(
+        payload,
+        title="Test Pareto",
+        subtitle="global s=5%; local top-40 s=0%",
+        width=820,
+    )
 
     ET.fromstring(svg)
     assert svg.startswith('<?xml version="1.0" encoding="UTF-8"?>')
     assert "Test Pareto" in svg
+    assert "global s=5%; local top-40 s=0%" in svg
     assert "Recall versus QPS Pareto" in svg
     assert "QPS, higher is better" in svg
     assert "recall@k (linear)" in svg
@@ -81,7 +87,13 @@ def test_render_benchmark_pareto_svg_outputs_valid_chart(tmp_path) -> None:
     assert "postfilter" in svg
 
     path = tmp_path / "pareto.svg"
-    write_benchmark_pareto_svg(payload, path, title="Test Pareto", width=820)
+    write_benchmark_pareto_svg(
+        payload,
+        path,
+        title="Test Pareto",
+        subtitle="global s=5%; local top-40 s=0%",
+        width=820,
+    )
     assert path.read_text(encoding="utf-8") == svg
 
     report_path = tmp_path / "benchmark.json"

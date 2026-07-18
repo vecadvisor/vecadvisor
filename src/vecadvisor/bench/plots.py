@@ -170,6 +170,7 @@ def render_benchmark_pareto_svg(
     payload: Mapping[str, Any],
     *,
     title: str = DEFAULT_PARETO_TITLE,
+    subtitle: str | None = None,
     width: int = DEFAULT_PARETO_WIDTH,
 ) -> str:
     """Render a dependency-free recall-vs-QPS Pareto chart from benchmark JSON."""
@@ -190,6 +191,14 @@ def render_benchmark_pareto_svg(
     queries = dataset.get("queries", "unknown")
     k = ground_truth.get("k", "unknown") if ground_truth is not None else "unknown"
     metric = ground_truth.get("metric", "unknown") if ground_truth is not None else "unknown"
+    chart_subtitle = (
+        subtitle
+        if subtitle is not None
+        else (
+            f"dataset: {dataset_id}  |  rows: {rows}  |  queries: {queries}"
+            f"  |  k: {k}  |  metric: {metric}"
+        )
+    )
 
     parts = [
         '<?xml version="1.0" encoding="UTF-8"?>',
@@ -205,11 +214,7 @@ def render_benchmark_pareto_svg(
         _pareto_style_block(),
         f'<rect width="{width}" height="{PARETO_HEIGHT}" fill="#ffffff"/>',
         f'<text class="chart-title" x="{PLOT_LEFT}" y="38">{_escape(title)}</text>',
-        (
-            f'<text class="summary" x="{PLOT_LEFT}" y="64">dataset: {_escape(dataset_id)}'
-            f"  |  rows: {_escape(rows)}  |  queries: {_escape(queries)}"
-            f"  |  k: {_escape(k)}  |  metric: {_escape(metric)}</text>"
-        ),
+        f'<text class="summary" x="{PLOT_LEFT}" y="64">{_escape(chart_subtitle)}</text>',
         _pareto_legend(points, width=width),
         _plot_frame(
             x=PLOT_LEFT,
@@ -262,11 +267,17 @@ def write_benchmark_pareto_svg(
     path: Path,
     *,
     title: str = DEFAULT_PARETO_TITLE,
+    subtitle: str | None = None,
     width: int = DEFAULT_PARETO_WIDTH,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
-        render_benchmark_pareto_svg(payload, title=title, width=width),
+        render_benchmark_pareto_svg(
+            payload,
+            title=title,
+            subtitle=subtitle,
+            width=width,
+        ),
         encoding="utf-8",
     )
 

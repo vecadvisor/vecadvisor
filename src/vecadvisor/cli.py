@@ -1476,6 +1476,10 @@ def plot_benchmark_command(
         str,
         typer.Option("--title", help="Chart title."),
     ] = DEFAULT_PARETO_TITLE,
+    subtitle: Annotated[
+        str | None,
+        typer.Option("--subtitle", help="Optional chart subtitle."),
+    ] = None,
     width: Annotated[
         int,
         typer.Option("--width", min=700, help="SVG width in pixels."),
@@ -1485,7 +1489,13 @@ def plot_benchmark_command(
 
     try:
         payload = load_benchmark_payload(benchmark)
-        write_benchmark_pareto_svg(payload, out, title=title, width=width)
+        write_benchmark_pareto_svg(
+            payload,
+            out,
+            title=title,
+            subtitle=subtitle,
+            width=width,
+        )
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
 

@@ -66,22 +66,9 @@ across representative query vectors.
 
 ## Benchmark Evidence
 
-The lead artifact measures actual PostgreSQL/pgvector behavior, not a
-self-contained simulator:
-
-![Real pgvector Pareto chart](docs/assets/real-pgvector-pareto.svg)
-
-Using the bundled `pgvector/pgvector:pg17` container, fixed-size HNSW
-post-filtering reached only `0.2125` recall@k and returned full `k` for `0%`
-of queries on a filtered workload. Iterative, partial-index, and
-partition-pruned HNSW recovered result quality. This is the failure mode
-VecAdvisor is designed to catch before it becomes a production surprise.
-
-See
-[`docs/benchmarks/real-pgvector-benchmark.md`](docs/benchmarks/real-pgvector-benchmark.md)
-for the SQL strategy details, hardware notes, and reproduction commands.
-
-The scale artifact uses the same idea on `1,000,000` real SIFT vectors:
+The lead artifacts measure actual PostgreSQL/pgvector behavior, not a
+self-contained simulator. The scale artifact uses `1,000,000` real SIFT
+vectors and is the strongest first read:
 
 ![SIFT1M filtered pgvector quality chart](docs/assets/sift1m-anticorrelated-quality-bars.svg)
 
@@ -100,6 +87,28 @@ for the full SIFT1M recall-collapse artifact. A companion projection-tail
 SIFT1M run is also committed; it reaches `0.1750` postfilter recall@k and
 `0.9875` iterative recall@k:
 [`docs/benchmarks/sift1m-pgvector-benchmark.md`](docs/benchmarks/sift1m-pgvector-benchmark.md).
+
+A smaller Docker-reproducible benchmark keeps the SQL strategy mechanics easy
+to inspect:
+
+![Real pgvector Pareto chart](docs/assets/real-pgvector-pareto.svg)
+
+Using the bundled `pgvector/pgvector:pg17` container, fixed-size HNSW
+post-filtering reached only `0.2125` recall@k and returned full `k` for `0%`
+of queries on a filtered workload. Iterative, partial-index, and
+partition-pruned HNSW recovered result quality. This is the failure mode
+VecAdvisor is designed to catch before it becomes a production surprise.
+
+See
+[`docs/benchmarks/real-pgvector-benchmark.md`](docs/benchmarks/real-pgvector-benchmark.md)
+for the SQL strategy details, hardware notes, and reproduction commands.
+
+On the measured PostgreSQL crossover sweep, VecAdvisor recommended a
+recall-target-meeting plan in every failed-postfilter bin (`9/9`). It selected
+the exact latency-optimal plan in `4/9` bins; in the remaining bins it chose a
+recall-safe, slightly slower plan. Safety is the MVP1 claim; exact
+latency-optimal ranking is a calibration roadmap item:
+[`real-pgvector-crossover`](docs/assets/real-pgvector-crossover.svg).
 
 The repository also includes deterministic synthetic validation under
 `docs/benchmarks/`:

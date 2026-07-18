@@ -747,6 +747,8 @@ def test_plot_benchmark_cli_writes_pareto_svg(tmp_path: Path) -> None:
             str(out_path),
             "--title",
             "CLI Pareto",
+            "--subtitle",
+            "global s=5%; local top-40 s=0%",
             "--width",
             "820",
         ],
@@ -764,6 +766,7 @@ def test_plot_benchmark_cli_writes_pareto_svg(tmp_path: Path) -> None:
     svg = out_path.read_text(encoding="utf-8")
     assert "<svg" in svg
     assert "CLI Pareto" in svg
+    assert "global s=5%; local top-40 s=0%" in svg
     assert "Pareto frontier" in svg
 
 

@@ -109,7 +109,8 @@ vecadvisor plot-quality-bars \
 vecadvisor plot-benchmark \
   docs/benchmarks/sift1m-anticorrelated-pgvector-benchmark.json \
   --out docs/assets/sift1m-anticorrelated-pgvector-pareto.svg \
-  --title "VecAdvisor SIFT1M anti-correlated pgvector Pareto"
+  --title "VecAdvisor SIFT1M anti-correlated pgvector Pareto" \
+  --subtitle "global selectivity 5%; exact top-40 local selectivity 0% across 16 queries"
 ```
 
 After reproducing locally, remove the ignored data files to reclaim space:

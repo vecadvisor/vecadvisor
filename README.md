@@ -1,8 +1,8 @@
 # VecAdvisor
 
 [![CI](https://github.com/vecadvisor/vecadvisor/actions/workflows/ci.yml/badge.svg)](https://github.com/vecadvisor/vecadvisor/actions/workflows/ci.yml)
-[![License](https://img.shields.io/github/license/vecadvisor/vecadvisor)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.11%2B-blue)](pyproject.toml)
+[![License](https://img.shields.io/github/license/vecadvisor/vecadvisor)](https://github.com/vecadvisor/vecadvisor/blob/main/LICENSE)
+[![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://github.com/vecadvisor/vecadvisor/blob/main/pyproject.toml)
 
 Cost-based CLI advisor for filtered vector search in PostgreSQL and pgvector.
 
@@ -23,9 +23,9 @@ than `k` rows. Sometimes a filter-first exact scan is faster and exact.
 Sometimes pgvector iterative scans are the right answer. Sometimes a partial
 HNSW index or partitioning is the durable fix.
 
-![VecAdvisor recommend demo catching filtered ANN recall collapse](docs/assets/vecadvisor-demo.gif)
+![VecAdvisor recommend demo catching filtered ANN recall collapse](https://raw.githubusercontent.com/vecadvisor/vecadvisor/main/docs/assets/vecadvisor-demo.gif)
 
-[Asciinema cast fallback](docs/assets/vecadvisor-demo.cast)
+[Asciinema cast fallback](https://github.com/vecadvisor/vecadvisor/blob/main/docs/assets/vecadvisor-demo.cast)
 
 This project models that choice with:
 
@@ -45,11 +45,11 @@ pgvector, but it is not affiliated with the official pgvector project.
 
 ## Documentation
 
-- [Design](DESIGN.md)
-- [Predicate support](docs/predicates.md)
-- [Benchmark artifacts](docs/benchmarks/README.md)
-- [SIFT1M scale benchmark recipe](docs/benchmarks/scale-benchmark.md)
-- [Release checklist](docs/release.md)
+- [Design](https://github.com/vecadvisor/vecadvisor/blob/main/DESIGN.md)
+- [Predicate support](https://github.com/vecadvisor/vecadvisor/blob/main/docs/predicates.md)
+- [Benchmark artifacts](https://github.com/vecadvisor/vecadvisor/blob/main/docs/benchmarks/README.md)
+- [SIFT1M scale benchmark recipe](https://github.com/vecadvisor/vecadvisor/blob/main/docs/benchmarks/scale-benchmark.md)
+- [Release checklist](https://github.com/vecadvisor/vecadvisor/blob/main/docs/release.md)
 
 ## Why Local Selectivity Matters
 
@@ -70,7 +70,7 @@ The lead artifacts measure actual PostgreSQL/pgvector behavior, not a
 self-contained simulator. The scale artifact uses `1,000,000` real SIFT
 vectors and is the strongest first read:
 
-![SIFT1M filtered pgvector quality chart](docs/assets/sift1m-anticorrelated-quality-bars.svg)
+![SIFT1M filtered pgvector quality chart](https://raw.githubusercontent.com/vecadvisor/vecadvisor/main/docs/assets/sift1m-anticorrelated-quality-bars.png)
 
 With global filter selectivity fixed at `5%`, the anti-correlated SIFT1M run
 has zero passing rows in every query's exact top-40 neighborhood. Fixed-frontier
@@ -79,19 +79,19 @@ queries. Iterative HNSW recovers `1.0000` recall@k and full `k`, a `65.6`
 percentage-point recall improvement over fixed postfilter.
 
 The companion Pareto chart is still useful for throughput/quality tradeoffs:
-[`SIFT1M anti-correlated Pareto`](docs/assets/sift1m-anticorrelated-pgvector-pareto.svg).
+[`SIFT1M anti-correlated Pareto`](https://github.com/vecadvisor/vecadvisor/blob/main/docs/assets/sift1m-anticorrelated-pgvector-pareto.svg).
 
 See
-[`docs/benchmarks/sift1m-anticorrelated-pgvector-benchmark.md`](docs/benchmarks/sift1m-anticorrelated-pgvector-benchmark.md)
+[`docs/benchmarks/sift1m-anticorrelated-pgvector-benchmark.md`](https://github.com/vecadvisor/vecadvisor/blob/main/docs/benchmarks/sift1m-anticorrelated-pgvector-benchmark.md)
 for the full SIFT1M recall-collapse artifact. A companion projection-tail
 SIFT1M run is also committed; it reaches `0.1750` postfilter recall@k and
 `0.9875` iterative recall@k:
-[`docs/benchmarks/sift1m-pgvector-benchmark.md`](docs/benchmarks/sift1m-pgvector-benchmark.md).
+[`docs/benchmarks/sift1m-pgvector-benchmark.md`](https://github.com/vecadvisor/vecadvisor/blob/main/docs/benchmarks/sift1m-pgvector-benchmark.md).
 
 A smaller Docker-reproducible benchmark keeps the SQL strategy mechanics easy
 to inspect:
 
-![Real pgvector Pareto chart](docs/assets/real-pgvector-pareto.svg)
+![Real pgvector Pareto chart](https://raw.githubusercontent.com/vecadvisor/vecadvisor/main/docs/assets/real-pgvector-pareto.png)
 
 Using the bundled `pgvector/pgvector:pg17` container, fixed-size HNSW
 post-filtering reached only `0.2125` recall@k and returned full `k` for `0%`
@@ -100,7 +100,7 @@ partition-pruned HNSW recovered result quality. This is the failure mode
 VecAdvisor is designed to catch before it becomes a production surprise.
 
 See
-[`docs/benchmarks/real-pgvector-benchmark.md`](docs/benchmarks/real-pgvector-benchmark.md)
+[`docs/benchmarks/real-pgvector-benchmark.md`](https://github.com/vecadvisor/vecadvisor/blob/main/docs/benchmarks/real-pgvector-benchmark.md)
 for the SQL strategy details, hardware notes, and reproduction commands.
 
 On the measured PostgreSQL crossover sweep, VecAdvisor recommended a
@@ -108,12 +108,12 @@ recall-target-meeting plan in every failed-postfilter bin (`9/9`). It selected
 the exact latency-optimal plan in `4/9` bins; in the remaining bins it chose a
 recall-safe, slightly slower plan. Safety is the MVP1 claim; exact
 latency-optimal ranking is a calibration roadmap item:
-[`real-pgvector-crossover`](docs/assets/real-pgvector-crossover.svg).
+[`real-pgvector-crossover`](https://github.com/vecadvisor/vecadvisor/blob/main/docs/assets/real-pgvector-crossover.svg).
 
 The repository also includes deterministic synthetic validation under
 `docs/benchmarks/`:
 
-![Synthetic crossover chart](docs/assets/synthetic-crossover.svg)
+![Synthetic crossover chart](https://raw.githubusercontent.com/vecadvisor/vecadvisor/main/docs/assets/synthetic-crossover.png)
 
 That sweep varies filter selectivity (`0.01`, `0.05`, `0.1`, `0.3`) and
 filter/vector correlation (`-0.6`, `0`, `0.6`) across 12 points. It is a
@@ -182,7 +182,7 @@ The current alpha release is also available as wheel and source artifacts on
 GitHub:
 
 ```bash
-python -m pip install https://github.com/vecadvisor/vecadvisor/releases/download/v0.1.0a2/vecadvisor-0.1.0a2-py3-none-any.whl
+python -m pip install https://github.com/vecadvisor/vecadvisor/releases/download/v0.1.0a3/vecadvisor-0.1.0a3-py3-none-any.whl
 ```
 
 The CLI entry point is:
@@ -236,8 +236,8 @@ vecadvisor recommend \
 
 Captured outputs:
 
-- [`examples/explain-output.txt`](examples/explain-output.txt)
-- [`examples/recommend-output.txt`](examples/recommend-output.txt)
+- [`examples/explain-output.txt`](https://github.com/vecadvisor/vecadvisor/blob/main/examples/explain-output.txt)
+- [`examples/recommend-output.txt`](https://github.com/vecadvisor/vecadvisor/blob/main/examples/recommend-output.txt)
 
 ## Local PostgreSQL
 
@@ -457,7 +457,7 @@ Important JSON fields:
   downloaded into ignored local `data/` paths.
 - Calibration constants are workload and hardware dependent.
 - Predicate parsing intentionally supports a
-  [restricted safe subset of filters](docs/predicates.md).
+  [restricted safe subset of filters](https://github.com/vecadvisor/vecadvisor/blob/main/docs/predicates.md).
 - 10M-scale exact ground truth is deferred to the planned C++ SIMD kernel work.
 - Postgres integration tests require a reachable PostgreSQL database with
   pgvector installed. Tests skip those cases if the database is unavailable.

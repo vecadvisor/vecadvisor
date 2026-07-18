@@ -149,12 +149,24 @@ def test_render_benchmark_pareto_svg_staggers_clustered_labels() -> None:
         )
     ]
     assert {label for label, _, _, _ in labels} == {"exact", "iterative", "partial"}
+    points = {
+        match.group("label"): (
+            float(match.group("x")),
+            float(match.group("y")),
+        )
+        for match in re.finditer(
+            r'<circle class="pareto-point" cx="(?P<x>[0-9.]+)" '
+            r'cy="(?P<y>[0-9.]+)"[^>]*><title>(?P<label>[^:]+):',
+            svg,
+        )
+    }
     boxes = [_label_box_for_test(label, anchor, x, y) for label, anchor, x, y in labels]
     assert all(
         not _boxes_overlap_for_test(first, second)
         for index, first in enumerate(boxes)
         for second in boxes[index + 1 :]
     )
+    assert all(abs(y - points[label][1]) <= 28.0 for label, _, _, y in labels)
 
 
 def test_render_benchmark_pareto_svg_validates_input() -> None:

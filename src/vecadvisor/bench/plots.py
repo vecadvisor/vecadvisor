@@ -57,6 +57,7 @@ class _ParetoPointPlacement:
     label_x: float
     label_y: float
     label_anchor: str
+    leader: bool
 
 
 @dataclass(frozen=True)
@@ -526,6 +527,7 @@ text { font-family: "Segoe UI", Arial, sans-serif; fill: #111827; }
 .frame { fill: #ffffff; stroke: #d1d5db; stroke-width: 1; }
 .grid { stroke: #e5e7eb; stroke-width: 1; }
 .frontier { fill: none; stroke: #111827; stroke-width: 1.8; stroke-dasharray: 6 4; }
+.leader { stroke: #9ca3af; stroke-width: 1; }
 .pareto-point { stroke-width: 2; }
 .point-label {
   font-size: 12px;
@@ -680,8 +682,9 @@ def _pareto_points_svg(
         plot_height=plot_height,
     )
     markers = [_pareto_point_svg(placement, label=False) for placement in placements]
+    leaders = [_pareto_leader_svg(placement) for placement in placements]
     labels = [_pareto_point_svg(placement, label=True) for placement in placements]
-    return "\n".join((*markers, *labels))
+    return "\n".join((*markers, *leaders, *labels))
 
 
 def _pareto_point_placements(
@@ -698,62 +701,152 @@ def _pareto_point_placements(
     plot_bottom = float(PARETO_TOP + plot_height)
     boxes: list[_TextBox] = []
     placements: list[_ParetoPointPlacement] = []
-    raw: list[tuple[BenchmarkParetoPoint, float, float, float, float, str, float]] = []
+    marker_boxes: list[_TextBox] = []
+    raw: list[tuple[BenchmarkParetoPoint, float, float, float]] = []
 
     for point in points:
         point_x = _qps_x(point.qps, x_min=x_min, x_max=x_max, plot_width=plot_width)
         point_y = _pareto_recall_y(point.recall_at_k, plot_height=plot_height)
-        label_width = _label_width(point.strategy)
-        anchor = "end" if point_x > plot_right - 140 else "start"
-        label_x = point_x - 12 if anchor == "end" else point_x + 12
-        label_x = _clamp_label_x(
-            label_x,
-            label_width=label_width,
-            anchor=anchor,
-            plot_left=plot_left,
-            plot_right=plot_right,
+        marker_boxes.append(
+            _TextBox(
+                left=point_x - 10.0,
+                top=point_y - 10.0,
+                right=point_x + 10.0,
+                bottom=point_y + 10.0,
+            )
         )
-        label_y = point_y + 22 if point_y < plot_top + 40 else point_y - 10
-        label_y = max(plot_top + 16, min(plot_bottom - 8, label_y))
-        raw.append((point, point_x, point_y, label_x, label_y, anchor, label_width))
+        raw.append((point, point_x, point_y, _label_width(point.strategy)))
 
-    for point, point_x, point_y, label_x, label_y, anchor, label_width in sorted(
+    for point, point_x, point_y, label_width in sorted(
         raw,
-        key=lambda item: (item[4], item[3]),
+        key=lambda item: (item[2], item[1]),
     ):
-        chosen_y = label_y
-        for offset in (0, 16, 32, 48, -16, -32, 64, -48, 80, -64):
-            candidate_y = max(plot_top + 16, min(plot_bottom - 8, label_y + offset))
+        chosen_x: float | None = None
+        chosen_y: float | None = None
+        chosen_anchor: str | None = None
+        chosen_leader = False
+        for candidate_x, candidate_y, candidate_anchor, candidate_leader in (
+            _label_candidates(
+                point_x=point_x,
+                point_y=point_y,
+                label_width=label_width,
+                plot_left=plot_left,
+                plot_right=plot_right,
+                plot_top=plot_top,
+                plot_bottom=plot_bottom,
+            )
+        ):
             box = _label_box(
-                label_x,
+                candidate_x,
                 candidate_y,
                 label_width=label_width,
-                anchor=anchor,
+                anchor=candidate_anchor,
             )
-            if not any(_boxes_overlap(box, existing) for existing in boxes):
+            occupied = (*boxes, *marker_boxes)
+            if not any(_boxes_overlap(box, existing) for existing in occupied):
+                chosen_x = candidate_x
                 chosen_y = candidate_y
+                chosen_anchor = candidate_anchor
+                chosen_leader = candidate_leader
                 boxes.append(box)
                 break
         else:
-            boxes.append(
-                _label_box(
-                    label_x,
-                    chosen_y,
-                    label_width=label_width,
-                    anchor=anchor,
+            fallback_x, fallback_y, fallback_anchor, fallback_leader = next(
+                iter(
+                    _label_candidates(
+                        point_x=point_x,
+                        point_y=point_y,
+                        label_width=label_width,
+                        plot_left=plot_left,
+                        plot_right=plot_right,
+                        plot_top=plot_top,
+                        plot_bottom=plot_bottom,
+                    )
                 )
             )
+            boxes.append(
+                _label_box(
+                    fallback_x,
+                    fallback_y,
+                    label_width=label_width,
+                    anchor=fallback_anchor,
+                )
+            )
+            chosen_x = fallback_x
+            chosen_y = fallback_y
+            chosen_anchor = fallback_anchor
+            chosen_leader = fallback_leader
         placements.append(
             _ParetoPointPlacement(
                 point=point,
                 point_x=point_x,
                 point_y=point_y,
-                label_x=label_x,
+                label_x=chosen_x,
                 label_y=chosen_y,
-                label_anchor=anchor,
+                label_anchor=chosen_anchor,
+                leader=chosen_leader,
             )
         )
     return tuple(placements)
+
+
+def _label_candidates(
+    *,
+    point_x: float,
+    point_y: float,
+    label_width: float,
+    plot_left: float,
+    plot_right: float,
+    plot_top: float,
+    plot_bottom: float,
+) -> tuple[tuple[float, float, str, bool], ...]:
+    primary_anchor = "end" if point_x > plot_right - 140 else "start"
+    secondary_anchor = "start" if primary_anchor == "end" else "end"
+    candidates: list[tuple[float, float, str, bool]] = []
+    for anchor, y_offset, leader in (
+        (primary_anchor, 4.0, False),
+        (secondary_anchor, 4.0, False),
+        (primary_anchor, 22.0, True),
+        (secondary_anchor, 22.0, True),
+        (primary_anchor, -12.0, True),
+        (secondary_anchor, -12.0, True),
+        (primary_anchor, 38.0, True),
+        (secondary_anchor, 38.0, True),
+        (primary_anchor, -28.0, True),
+        (secondary_anchor, -28.0, True),
+        (primary_anchor, 54.0, True),
+        (secondary_anchor, 54.0, True),
+    ):
+        x_offset = -14.0 if anchor == "end" else 14.0
+        label_x = _clamp_label_x(
+            point_x + x_offset,
+            label_width=label_width,
+            anchor=anchor,
+            plot_left=plot_left,
+            plot_right=plot_right,
+        )
+        label_y = max(plot_top + 16.0, min(plot_bottom - 8.0, point_y + y_offset))
+        candidate = (label_x, label_y, anchor, leader)
+        if candidate not in candidates:
+            candidates.append(candidate)
+    return tuple(candidates)
+
+
+def _pareto_leader_svg(placement: _ParetoPointPlacement) -> str:
+    if not placement.leader:
+        return ""
+    if placement.label_anchor == "end":
+        x1 = placement.point_x - 8.0
+        x2 = placement.label_x + 3.0
+    else:
+        x1 = placement.point_x + 8.0
+        x2 = placement.label_x - 3.0
+    y1 = placement.point_y
+    y2 = placement.label_y - 4.0
+    return (
+        f'<line class="leader" x1="{x1:.2f}" y1="{y1:.2f}" '
+        f'x2="{x2:.2f}" y2="{y2:.2f}"/>'
+    )
 
 
 def _label_width(label: str) -> float:

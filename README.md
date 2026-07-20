@@ -6,6 +6,8 @@
 
 Cost-based CLI advisor for filtered vector search in PostgreSQL and pgvector.
 
+**Read the story:** [Filtered vector search in pgvector can silently lose recall](https://dev.to/varunsls/filtered-vector-search-in-pgvector-can-silently-lose-recall-1nim)
+
 VecAdvisor helps answer a question PostgreSQL does not currently cost
 well:
 
@@ -64,6 +66,7 @@ model misses this. VecAdvisor probes a bounded unfiltered top-m
 neighborhood and costs durable recommendations against p10 local selectivity
 across representative query vectors.
 
+> Full write-up of these results: [Filtered vector search in pgvector can silently lose recall](https://dev.to/varunsls/filtered-vector-search-in-pgvector-can-silently-lose-recall-1nim)
 ## Benchmark Evidence
 
 The lead artifacts measure actual PostgreSQL/pgvector behavior, not a

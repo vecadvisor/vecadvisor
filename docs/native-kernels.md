@@ -13,6 +13,28 @@ is not wired into PyPI packaging yet. This keeps the published CLI stable while
 the native kernel ABI, benchmark harness, and cross-platform build discipline
 settle.
 
+## Data Contract
+
+The current native API is deliberately narrow and easy to bind later:
+
+- inputs are contiguous `float32` arrays;
+- vectors are row-major when passed as a matrix by a caller;
+- kernels accept unaligned pointers and use unaligned SIMD loads;
+- `dim` may be any positive value and does not need to be divisible by the SIMD
+  lane width;
+- callers must pass non-null pointers when `dim > 0`;
+- scalar kernels are the correctness baseline for every dispatch path.
+
+The kernels do not sanitize `NaN` or infinite values on the hot path. IEEE
+floating-point behavior is preserved: `NaN` inputs propagate to the result, and
+infinite values follow the platform math rules. Cosine distance clamps a zero
+or near-zero denominator to `1e-12` to avoid division by zero, matching the
+project's existing Python benchmark semantics.
+
+SIMD reductions can differ slightly from scalar reduction order. Tests and
+benchmarks should treat dispatch results within `1e-4` absolute error of the
+scalar path as equivalent for normal benchmark vectors.
+
 ## Build
 
 Install a C++17 compiler and CMake, then run:
@@ -32,6 +54,39 @@ To force scalar-only kernels:
 ```bash
 cmake -S native -B native/build -DVECADVISOR_NATIVE_ENABLE_AVX2=OFF
 ```
+
+## Benchmark
+
+The native benchmark executable is built as `vecadvisor_distance_bench` when
+`VECADVISOR_NATIVE_BUILD_BENCHMARKS=ON`:
+
+```bash
+native/build/vecadvisor_distance_bench \
+  --rows 4096 \
+  --queries 16 \
+  --dim 128 \
+  --iterations 5 \
+  --metrics l2,ip,cosine
+```
+
+For a Python-facing report with NumPy checksum validation:
+
+```bash
+python tools/native_distance_benchmark.py \
+  --rows 4096 \
+  --queries 16 \
+  --dim 128 \
+  --iterations 5
+```
+
+The wrapper builds the native target by default, runs the benchmark, validates
+scalar and dispatch checksums against deterministic NumPy data, and writes:
+
+- `docs/benchmarks/native-distance-kernels.json`
+- `docs/benchmarks/native-distance-kernels.md`
+- `docs/assets/native-distance-kernels.svg`
+
+Use `--no-build` when the CMake build directory already exists.
 
 ## Design Rules
 

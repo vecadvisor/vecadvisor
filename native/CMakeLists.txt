@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.20)
 project(vecadvisor_native LANGUAGES CXX)
 
 option(VECADVISOR_NATIVE_BUILD_TESTS "Build native VecAdvisor tests" ON)
+option(VECADVISOR_NATIVE_BUILD_BENCHMARKS "Build native VecAdvisor benchmarks" ON)
 option(VECADVISOR_NATIVE_ENABLE_AVX2 "Build AVX2 distance kernels when supported" ON)
 
 add_library(vecadvisor_distance STATIC src/distance.cpp)
@@ -61,4 +62,28 @@ if(VECADVISOR_NATIVE_BUILD_TESTS)
   endif()
 
   add_test(NAME vecadvisor_distance_test COMMAND vecadvisor_distance_test)
+endif()
+
+if(VECADVISOR_NATIVE_BUILD_BENCHMARKS)
+  add_executable(vecadvisor_distance_bench bench/distance_bench.cpp)
+  target_link_libraries(vecadvisor_distance_bench PRIVATE vecadvisor_distance)
+  target_compile_features(vecadvisor_distance_bench PRIVATE cxx_std_17)
+  if(MSVC)
+    target_compile_options(vecadvisor_distance_bench PRIVATE /W4 /permissive-)
+  else()
+    target_compile_options(vecadvisor_distance_bench PRIVATE -Wall -Wextra -Wpedantic)
+  endif()
+
+  if(VECADVISOR_NATIVE_BUILD_TESTS)
+    add_test(
+      NAME vecadvisor_distance_bench_smoke
+      COMMAND vecadvisor_distance_bench
+        --rows 128
+        --queries 4
+        --dim 31
+        --iterations 1
+        --metrics l2,ip,cosine
+        --json
+    )
+  endif()
 endif()

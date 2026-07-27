@@ -492,6 +492,19 @@ cmake --build native/build --config Release --parallel
 ctest --test-dir native/build --output-on-failure
 ```
 
+Run the native distance benchmark wrapper to compare scalar and runtime-dispatch
+kernels against deterministic NumPy checksums:
+
+```bash
+python tools/native_distance_benchmark.py \
+  --rows 4096 \
+  --queries 16 \
+  --dim 128 \
+  --iterations 5
+```
+
+It writes a JSON artifact, Markdown report, and SVG chart under `docs/`.
+
 ## Prior Art And Clean-Room Notes
 
 This project builds from public PostgreSQL, pgvector, and filtered ANN

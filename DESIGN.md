@@ -120,6 +120,11 @@ MVP2 keeps native code where it earns its keep:
 - A Rust/pgrx PostgreSQL extension path for planner hooks, cost-estimate
   integration, GUCs, and future index access-method experiments.
 
+The initial MVP2 native slice is a standalone C++17 distance-kernel library
+with scalar correctness baselines, optional AVX2 dispatch, CMake tests, and no
+change to the Python package ABI. Python integration comes only after native
+benchmarks and CI are stable.
+
 MVP3 adds workload collection and deeper production ergonomics, including
 `pg_stat_statements` mining, richer predicate support, and more benchmark
 artifacts.

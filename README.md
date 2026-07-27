@@ -49,6 +49,7 @@ pgvector, but it is not affiliated with the official pgvector project.
 
 - [Design](https://github.com/vecadvisor/vecadvisor/blob/main/DESIGN.md)
 - [Predicate support](https://github.com/vecadvisor/vecadvisor/blob/main/docs/predicates.md)
+- [Native kernels](https://github.com/vecadvisor/vecadvisor/blob/main/docs/native-kernels.md)
 - [Benchmark artifacts](https://github.com/vecadvisor/vecadvisor/blob/main/docs/benchmarks/README.md)
 - [SIFT1M scale benchmark recipe](https://github.com/vecadvisor/vecadvisor/blob/main/docs/benchmarks/scale-benchmark.md)
 - [Release checklist](https://github.com/vecadvisor/vecadvisor/blob/main/docs/release.md)
@@ -480,6 +481,15 @@ python -m pytest
 python -m ruff check .
 python -m mypy src/vecadvisor
 python -m build
+```
+
+Build the optional native distance kernels when a C++17 compiler and CMake are
+available:
+
+```bash
+cmake -S native -B native/build -DCMAKE_BUILD_TYPE=Release
+cmake --build native/build --config Release --parallel
+ctest --test-dir native/build --output-on-failure
 ```
 
 ## Prior Art And Clean-Room Notes

@@ -1,0 +1,25 @@
+name: Native
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  native:
+    name: C++ distance kernels
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Configure
+        run: cmake -S native -B native/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build native/build --config Release --parallel
+
+      - name: Test
+        run: ctest --test-dir native/build --output-on-failure

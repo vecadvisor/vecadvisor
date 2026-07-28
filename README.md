@@ -505,6 +505,10 @@ python tools/native_distance_benchmark.py \
 
 It writes a JSON artifact, Markdown report, and SVG chart under `docs/`.
 
+The committed MVP2 native artifact compares AVX2 dispatch with an explicit
+scalar-only fallback build:
+[`docs/benchmarks/native-distance-kernels.md`](https://github.com/vecadvisor/vecadvisor/blob/main/docs/benchmarks/native-distance-kernels.md).
+
 ## Prior Art And Clean-Room Notes
 
 This project builds from public PostgreSQL, pgvector, and filtered ANN

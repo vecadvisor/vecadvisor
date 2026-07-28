@@ -5,6 +5,7 @@ import importlib
 import pytest
 
 bench = importlib.import_module("tools.native_distance_benchmark")
+compare = importlib.import_module("tools.native_distance_compare")
 
 
 def test_generated_matrix_is_deterministic_float32() -> None:
@@ -108,3 +109,92 @@ def test_render_report_and_chart_include_key_fields() -> None:
     assert "NumPy Correctness Check" in markdown
     assert "<svg" in svg
     assert "nanoseconds per distance" in svg
+
+
+def test_compare_combines_avx2_and_scalar_payloads() -> None:
+    avx2_payload = _native_payload(
+        avx2_compiled=True,
+        avx2_runtime=True,
+        selected_kernel="avx2",
+        dispatch_ns=4.0,
+    )
+    scalar_payload = _native_payload(
+        avx2_compiled=False,
+        avx2_runtime=False,
+        selected_kernel="scalar",
+        dispatch_ns=10.0,
+    )
+
+    combined = compare.build_combined_payload(
+        avx2_payload,
+        scalar_payload,
+        avx2_source="avx2.json",
+        scalar_source="scalar.json",
+    )
+    markdown = compare.render_markdown_report(combined)
+    svg = compare.render_svg_chart(combined)
+
+    assert combined["summary"][0]["speedup_vs_scalar_fallback"] == pytest.approx(2.5)
+    assert combined["summary"][0]["numpy_checks_passed"] is True
+    assert "scalar-only fallback build" in markdown
+    assert "| l2 | avx2 | 4.000 | 10.000 | 2.500x" in markdown
+    assert "<svg" in svg
+    assert "AVX2 dispatch" in svg
+
+
+def test_compare_rejects_mismatched_payloads() -> None:
+    avx2_payload = _native_payload(
+        avx2_compiled=True,
+        avx2_runtime=True,
+        selected_kernel="avx2",
+        dispatch_ns=4.0,
+    )
+    scalar_payload = _native_payload(
+        avx2_compiled=False,
+        avx2_runtime=False,
+        selected_kernel="scalar",
+        dispatch_ns=10.0,
+    )
+    scalar_payload["dim"] = 256
+
+    with pytest.raises(ValueError, match="dim"):
+        compare.build_combined_payload(
+            avx2_payload,
+            scalar_payload,
+            avx2_source="avx2.json",
+            scalar_source="scalar.json",
+        )
+
+
+def _native_payload(
+    *,
+    avx2_compiled: bool,
+    avx2_runtime: bool,
+    selected_kernel: str,
+    dispatch_ns: float,
+) -> dict[str, object]:
+    return {
+        "schema_version": 1,
+        "rows": 128,
+        "queries": 4,
+        "dim": 64,
+        "iterations": 2,
+        "capabilities": {
+            "avx2_compiled": avx2_compiled,
+            "avx2_runtime": avx2_runtime,
+        },
+        "results": [
+            {
+                "metric": "l2",
+                "selected_kernel": selected_kernel,
+                "scalar": {"ns_per_distance": 12.0},
+                "dispatch": {"ns_per_distance": dispatch_ns},
+                "speedup_vs_scalar": 12.0 / dispatch_ns,
+                "max_abs_error_vs_scalar": 0.0,
+            }
+        ],
+        "python_wrapper": {
+            "platform": "test-platform",
+            "numpy_validation": [{"metric": "l2", "passed": True}],
+        },
+    }

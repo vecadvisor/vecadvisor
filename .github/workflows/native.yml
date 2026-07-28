@@ -21,27 +21,71 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      - name: Configure
-        run: cmake -S native -B native/build -DCMAKE_BUILD_TYPE=Release
+      - name: Configure AVX2-capable build
+        run: cmake -S native -B native/build-avx2 -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build
-        run: cmake --build native/build --config Release --parallel
+      - name: Build AVX2-capable target
+        run: cmake --build native/build-avx2 --config Release --parallel
 
-      - name: Test
-        run: ctest --test-dir native/build --output-on-failure
+      - name: Test AVX2-capable target
+        run: ctest --test-dir native/build-avx2 --output-on-failure
+
+      - name: Configure scalar fallback build
+        run: >
+          cmake -S native
+          -B native/build-scalar
+          -DCMAKE_BUILD_TYPE=Release
+          -DVECADVISOR_NATIVE_ENABLE_AVX2=OFF
+
+      - name: Build scalar fallback target
+        run: cmake --build native/build-scalar --config Release --parallel
+
+      - name: Test scalar fallback target
+        run: ctest --test-dir native/build-scalar --output-on-failure
 
       - name: Install Python benchmark dependencies
         run: python -m pip install numpy
 
-      - name: Run native benchmark smoke
+      - name: Run AVX2-capable benchmark
         run: >
           python tools/native_distance_benchmark.py
           --no-build
-          --build-dir native/build
-          --rows 512
-          --queries 4
-          --dim 64
-          --iterations 2
-          --json-out native/build/native-distance-kernels.json
-          --markdown-out native/build/native-distance-kernels.md
-          --svg-out native/build/native-distance-kernels.svg
+          --build-dir native/build-avx2
+          --rows 2048
+          --queries 8
+          --dim 128
+          --iterations 5
+          --json-out native/artifacts/avx2/native-distance-kernels.json
+          --markdown-out native/artifacts/avx2/native-distance-kernels.md
+          --svg-out native/artifacts/avx2/native-distance-kernels.svg
+
+      - name: Run scalar fallback benchmark
+        run: >
+          python tools/native_distance_benchmark.py
+          --no-build
+          --build-dir native/build-scalar
+          --rows 2048
+          --queries 8
+          --dim 128
+          --iterations 5
+          --json-out native/artifacts/scalar/native-distance-kernels.json
+          --markdown-out native/artifacts/scalar/native-distance-kernels.md
+          --svg-out native/artifacts/scalar/native-distance-kernels.svg
+
+      - name: Combine benchmark artifact
+        run: >
+          python tools/native_distance_compare.py
+          --avx2-json native/artifacts/avx2/native-distance-kernels.json
+          --scalar-json native/artifacts/scalar/native-distance-kernels.json
+          --json-out native/artifacts/native-distance-kernels.json
+          --markdown-out native/artifacts/native-distance-kernels.md
+          --svg-out native/artifacts/native-distance-kernels.svg
+
+      - name: Upload native benchmark artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-distance-kernels
+          path: |
+            native/artifacts/native-distance-kernels.json
+            native/artifacts/native-distance-kernels.md
+            native/artifacts/native-distance-kernels.svg

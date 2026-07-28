@@ -15,8 +15,5 @@ htmlcov/
 *.log
 benchmarks/*.csv
 benchmarks/*.json
-docs/benchmarks/native-distance-kernels.json
-docs/benchmarks/native-distance-kernels.md
-docs/assets/native-distance-kernels.svg
 profiles/*.json
 .vecadvisor-cache/

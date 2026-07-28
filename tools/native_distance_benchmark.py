@@ -320,17 +320,24 @@ def merge_payload(
     return merged
 
 
-def configure_and_build(build_dir: Path, build_type: str, *, source_dir: Path) -> None:
-    _run(
-        [
-            "cmake",
-            "-S",
-            str(source_dir / "native"),
-            "-B",
-            str(build_dir),
-            f"-DCMAKE_BUILD_TYPE={build_type}",
-        ]
-    )
+def configure_and_build(
+    build_dir: Path,
+    build_type: str,
+    *,
+    source_dir: Path,
+    enable_avx2: bool,
+) -> None:
+    command = [
+        "cmake",
+        "-S",
+        str(source_dir / "native"),
+        "-B",
+        str(build_dir),
+        f"-DCMAKE_BUILD_TYPE={build_type}",
+    ]
+    if not enable_avx2:
+        command.append("-DVECADVISOR_NATIVE_ENABLE_AVX2=OFF")
+    _run(command)
     _run(["cmake", "--build", str(build_dir), "--config", build_type, "--parallel"])
 
 
@@ -413,6 +420,11 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         action="store_true",
         help="Use an existing native build directory.",
     )
+    parser.add_argument(
+        "--disable-avx2",
+        action="store_true",
+        help="Configure a scalar-only native build.",
+    )
     parser.add_argument("--rows", type=_positive_int, default=4096)
     parser.add_argument("--queries", type=_positive_int, default=16)
     parser.add_argument("--dim", type=_positive_int, default=128)
@@ -441,7 +453,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
     source_dir = Path(__file__).resolve().parents[1]
     if not args.no_build:
-        configure_and_build(args.build_dir, args.build_type, source_dir=source_dir)
+        configure_and_build(
+            args.build_dir,
+            args.build_type,
+            source_dir=source_dir,
+            enable_avx2=not args.disable_avx2,
+        )
     binary = find_benchmark_binary(args.build_dir, args.build_type)
     payload = run_native_benchmark(
         binary,

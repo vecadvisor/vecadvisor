@@ -88,6 +88,29 @@ scalar and dispatch checksums against deterministic NumPy data, and writes:
 
 Use `--no-build` when the CMake build directory already exists.
 
+To build the scalar fallback path through the wrapper:
+
+```bash
+python tools/native_distance_benchmark.py \
+  --build-dir native/build-scalar \
+  --disable-avx2
+```
+
+The committed MVP2 benchmark artifact compares an AVX2-enabled build with a
+scalar-only fallback build:
+
+- `docs/benchmarks/native-distance-kernels.md`
+- `docs/benchmarks/native-distance-kernels.json`
+- `docs/assets/native-distance-kernels.svg`
+
+Regenerate the combined artifact with:
+
+```bash
+python tools/native_distance_compare.py \
+  --avx2-json native/build-avx2/native-distance-kernels.json \
+  --scalar-json native/build-scalar/native-distance-kernels.json
+```
+
 ## Design Rules
 
 - Keep exact search blocked; never materialize an `N x Q` distance matrix.

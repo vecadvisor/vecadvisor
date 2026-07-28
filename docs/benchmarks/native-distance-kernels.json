@@ -1,0 +1,254 @@
+{
+  "schema_version": 1,
+  "artifact": "native-distance-kernels",
+  "rows": 2048,
+  "queries": 8,
+  "dim": 128,
+  "iterations": 5,
+  "runs": [
+    {
+      "name": "avx2-dispatch",
+      "source": "native/artifacts/avx2/native-distance-kernels.json",
+      "platform": "Linux-6.17.0-1020-azure-x86_64-with-glibc2.39",
+      "capabilities": {
+        "avx2_compiled": true,
+        "avx2_runtime": true
+      },
+      "results": [
+        {
+          "metric": "l2",
+          "selected_kernel": "avx2",
+          "scalar": {
+            "seconds": 0.006794549,
+            "checksum": 7027402.31182,
+            "distances": 81920,
+            "ns_per_distance": 82.9412719727,
+            "distances_per_second": 12056723.706
+          },
+          "dispatch": {
+            "seconds": 0.001353663,
+            "checksum": 7027402.17039,
+            "distances": 81920,
+            "ns_per_distance": 16.524206543,
+            "distances_per_second": 60517277.934
+          },
+          "speedup_vs_scalar": 5.01938000817,
+          "max_abs_error_vs_scalar": 5.34057617188e-05
+        },
+        {
+          "metric": "ip",
+          "selected_kernel": "avx2",
+          "scalar": {
+            "seconds": 0.006352312,
+            "checksum": 5036.27721052,
+            "distances": 81920,
+            "ns_per_distance": 77.5428710937,
+            "distances_per_second": 12896092.0056
+          },
+          "dispatch": {
+            "seconds": 0.001477946,
+            "checksum": 5036.27609394,
+            "distances": 81920,
+            "ns_per_distance": 18.0413330078,
+            "distances_per_second": 55428276.8112
+          },
+          "speedup_vs_scalar": 4.29806772372,
+          "max_abs_error_vs_scalar": 4.76837158203e-06
+        },
+        {
+          "metric": "cosine",
+          "selected_kernel": "avx2",
+          "scalar": {
+            "seconds": 0.009991926,
+            "checksum": 81801.5309674,
+            "distances": 81920,
+            "ns_per_distance": 121.97175293,
+            "distances_per_second": 8198619.56544
+          },
+          "dispatch": {
+            "seconds": 0.002126641,
+            "checksum": 81801.5310025,
+            "distances": 81920,
+            "ns_per_distance": 25.9599731445,
+            "distances_per_second": 38520841.0823
+          },
+          "speedup_vs_scalar": 4.69845451113,
+          "max_abs_error_vs_scalar": 1.19209289551e-07
+        }
+      ],
+      "numpy_validation": [
+        {
+          "metric": "l2",
+          "reference_checksum": 7027402.169723511,
+          "scalar_checksum": 7027402.31182,
+          "dispatch_checksum": 7027402.17039,
+          "scalar_abs_error": 0.14209648966789246,
+          "dispatch_abs_error": 0.0006664888933300972,
+          "tolerance": 3513.7010848617556,
+          "passed": true
+        },
+        {
+          "metric": "ip",
+          "reference_checksum": 5036.276103965938,
+          "scalar_checksum": 5036.27721052,
+          "dispatch_checksum": 5036.27609394,
+          "scalar_abs_error": 0.0011065540620620595,
+          "dispatch_abs_error": 1.0025938536273316e-05,
+          "tolerance": 2.518138051982969,
+          "passed": true
+        },
+        {
+          "metric": "cosine",
+          "reference_checksum": 81801.53098523617,
+          "scalar_checksum": 81801.5309674,
+          "dispatch_checksum": 81801.5310025,
+          "scalar_abs_error": 1.7836166080087423e-05,
+          "dispatch_abs_error": 1.7263839254155755e-05,
+          "tolerance": 40.900765492618085,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "scalar-fallback",
+      "source": "native/artifacts/scalar/native-distance-kernels.json",
+      "platform": "Linux-6.17.0-1020-azure-x86_64-with-glibc2.39",
+      "capabilities": {
+        "avx2_compiled": false,
+        "avx2_runtime": false
+      },
+      "results": [
+        {
+          "metric": "l2",
+          "selected_kernel": "scalar",
+          "scalar": {
+            "seconds": 0.006801212,
+            "checksum": 7027402.31182,
+            "distances": 81920,
+            "ns_per_distance": 83.0226074219,
+            "distances_per_second": 12044911.9951
+          },
+          "dispatch": {
+            "seconds": 0.006720722,
+            "checksum": 7027402.31182,
+            "distances": 81920,
+            "ns_per_distance": 82.0400634766,
+            "distances_per_second": 12189166.5806
+          },
+          "speedup_vs_scalar": 1.01197639182,
+          "max_abs_error_vs_scalar": 0
+        },
+        {
+          "metric": "ip",
+          "selected_kernel": "scalar",
+          "scalar": {
+            "seconds": 0.006280438,
+            "checksum": 5036.27721052,
+            "distances": 81920,
+            "ns_per_distance": 76.6655029297,
+            "distances_per_second": 13043676.2532
+          },
+          "dispatch": {
+            "seconds": 0.006377368,
+            "checksum": 5036.27721052,
+            "distances": 81920,
+            "ns_per_distance": 77.8487304688,
+            "distances_per_second": 12845424.6329
+          },
+          "speedup_vs_scalar": 0.984800939823,
+          "max_abs_error_vs_scalar": 0
+        },
+        {
+          "metric": "cosine",
+          "selected_kernel": "scalar",
+          "scalar": {
+            "seconds": 0.009969463,
+            "checksum": 81801.5309674,
+            "distances": 81920,
+            "ns_per_distance": 121.697546387,
+            "distances_per_second": 8217092.53548
+          },
+          "dispatch": {
+            "seconds": 0.010029686,
+            "checksum": 81801.5309674,
+            "distances": 81920,
+            "ns_per_distance": 122.43269043,
+            "distances_per_second": 8167753.20783
+          },
+          "speedup_vs_scalar": 0.993995524885,
+          "max_abs_error_vs_scalar": 0
+        }
+      ],
+      "numpy_validation": [
+        {
+          "metric": "l2",
+          "reference_checksum": 7027402.169723511,
+          "scalar_checksum": 7027402.31182,
+          "dispatch_checksum": 7027402.31182,
+          "scalar_abs_error": 0.14209648966789246,
+          "dispatch_abs_error": 0.14209648966789246,
+          "tolerance": 3513.7010848617556,
+          "passed": true
+        },
+        {
+          "metric": "ip",
+          "reference_checksum": 5036.276103965938,
+          "scalar_checksum": 5036.27721052,
+          "dispatch_checksum": 5036.27721052,
+          "scalar_abs_error": 0.0011065540620620595,
+          "dispatch_abs_error": 0.0011065540620620595,
+          "tolerance": 2.518138051982969,
+          "passed": true
+        },
+        {
+          "metric": "cosine",
+          "reference_checksum": 81801.53098523617,
+          "scalar_checksum": 81801.5309674,
+          "dispatch_checksum": 81801.5309674,
+          "scalar_abs_error": 1.7836166080087423e-05,
+          "dispatch_abs_error": 1.7836166080087423e-05,
+          "tolerance": 40.900765492618085,
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "summary": [
+    {
+      "metric": "l2",
+      "avx2_selected_kernel": "avx2",
+      "scalar_fallback_selected_kernel": "scalar",
+      "avx2_dispatch_ns_per_distance": 16.524206543,
+      "avx2_scalar_ns_per_distance": 82.9412719727,
+      "scalar_fallback_dispatch_ns_per_distance": 82.0400634766,
+      "speedup_vs_scalar_fallback": 4.964841323128698,
+      "avx2_max_abs_error_vs_scalar": 5.34057617188e-05,
+      "scalar_fallback_max_abs_error_vs_scalar": 0.0,
+      "numpy_checks_passed": true
+    },
+    {
+      "metric": "ip",
+      "avx2_selected_kernel": "avx2",
+      "scalar_fallback_selected_kernel": "scalar",
+      "avx2_dispatch_ns_per_distance": 18.0413330078,
+      "avx2_scalar_ns_per_distance": 77.5428710937,
+      "scalar_fallback_dispatch_ns_per_distance": 77.8487304688,
+      "speedup_vs_scalar_fallback": 4.31502098182783,
+      "avx2_max_abs_error_vs_scalar": 4.76837158203e-06,
+      "scalar_fallback_max_abs_error_vs_scalar": 0.0,
+      "numpy_checks_passed": true
+    },
+    {
+      "metric": "cosine",
+      "avx2_selected_kernel": "avx2",
+      "scalar_fallback_selected_kernel": "scalar",
+      "avx2_dispatch_ns_per_distance": 25.9599731445,
+      "avx2_scalar_ns_per_distance": 121.97175293,
+      "scalar_fallback_dispatch_ns_per_distance": 122.43269043,
+      "speedup_vs_scalar_fallback": 4.716210211332177,
+      "avx2_max_abs_error_vs_scalar": 1.19209289551e-07,
+      "scalar_fallback_max_abs_error_vs_scalar": 0.0,
+      "numpy_checks_passed": true
+    }
+  ]
+}

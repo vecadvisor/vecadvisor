@@ -82,7 +82,7 @@ jobs:
           --svg-out native/artifacts/native-distance-kernels.svg
 
       - name: Upload native benchmark artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: native-distance-kernels
           path: |

@@ -35,6 +35,40 @@ SIMD reductions can differ slightly from scalar reduction order. Tests and
 benchmarks should treat dispatch results within `1e-4` absolute error of the
 scalar path as equivalent for normal benchmark vectors.
 
+## ABI And Python Binding Strategy
+
+The C++ namespace API in `vecadvisor/distance.hpp` is for native callers. The
+stable boundary for language bindings is the C ABI in
+`vecadvisor/distance_c.h`. That header exposes:
+
+- `vecadvisor_distance_compute` for one distance between two vectors;
+- `vecadvisor_distance_compute_many` for one query vector against a row-major
+  corpus matrix;
+- `vecadvisor_distance_get_capabilities` for runtime dispatch visibility;
+- status codes instead of exceptions.
+
+Python integration should bind to the C ABI, not to C++ symbols. The planned
+adapter is an optional Python module that loads the shared library and exposes
+NumPy-array entry points for exact ground truth and candidate rescoring. The
+advisor, cost model, SQL parsing, and recommendation logic remain pure Python.
+If the shared library is missing or rejects an input, Python falls back to the
+existing NumPy implementation.
+
+The initial binding should cross the native boundary once per query chunk using
+`vecadvisor_distance_compute_many`; it should not call
+`vecadvisor_distance_compute` once per row. That keeps Python overhead out of
+the hot loop and preserves the SIMD speedup shown in the benchmark artifact.
+
+The C ABI is versioned conservatively by header shape: append new enum values
+and functions, but do not reorder existing enum values or fields in
+`vecadvisor_kernel_capabilities`.
+
+CMake builds both targets:
+
+- `vecadvisor_distance`, a static library used by native tests and tools;
+- `vecadvisor_distance_shared`, a shared library with C ABI exports for future
+  Python loading.
+
 ## Build
 
 Install a C++17 compiler and CMake, then run:

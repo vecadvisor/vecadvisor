@@ -1,4 +1,5 @@
 #include "vecadvisor/distance.hpp"
+#include "vecadvisor/distance_c.h"
 
 #include <cmath>
 #include <cstdlib>
@@ -67,6 +68,53 @@ int main() {
       1.0e-4F,
       "dispatch cosine");
 
+  float c_distance = -1.0F;
+  if (vecadvisor_distance_compute(
+          VECADVISOR_DISTANCE_L2_SQUARED,
+          left.data(),
+          right.data(),
+          left.size(),
+          &c_distance) != VECADVISOR_DISTANCE_OK) {
+    std::cerr << "C ABI l2 call failed\n";
+    return 1;
+  }
+  assert_near(c_distance, 8.0F, 1.0e-6F, "C ABI l2");
+
+  std::vector<float> many_out(2);
+  const std::vector<float> corpus{1.0F, 4.0F, 1.0F, 1.0F, 0.0F, 0.0F};
+  if (vecadvisor_distance_compute_many(
+          VECADVISOR_DISTANCE_L2_SQUARED,
+          left.data(),
+          corpus.data(),
+          2,
+          left.size(),
+          many_out.data()) != VECADVISOR_DISTANCE_OK) {
+    std::cerr << "C ABI batch l2 call failed\n";
+    return 1;
+  }
+  assert_near(many_out[0], 8.0F, 1.0e-6F, "C ABI batch l2 row 0");
+  assert_near(many_out[1], 13.0F, 1.0e-6F, "C ABI batch l2 row 1");
+
+  if (vecadvisor_distance_compute(
+          static_cast<vecadvisor_distance_metric>(999),
+          left.data(),
+          right.data(),
+          left.size(),
+          &c_distance) != VECADVISOR_DISTANCE_UNSUPPORTED_METRIC) {
+    std::cerr << "C ABI unsupported metric should fail\n";
+    return 1;
+  }
+
+  if (vecadvisor_distance_compute(
+          VECADVISOR_DISTANCE_L2_SQUARED,
+          nullptr,
+          right.data(),
+          left.size(),
+          &c_distance) != VECADVISOR_DISTANCE_INVALID_ARGUMENT) {
+    std::cerr << "C ABI null pointer should fail\n";
+    return 1;
+  }
+
   const auto capabilities = detect_capabilities();
   if (capabilities.l2_kernel == nullptr || capabilities.inner_product_kernel == nullptr ||
       capabilities.cosine_kernel == nullptr) {
@@ -78,5 +126,13 @@ int main() {
             << " cosine=" << capabilities.cosine_kernel
             << " avx2_compiled=" << capabilities.avx2_compiled
             << " avx2_runtime=" << capabilities.avx2_runtime << '\n';
+
+  vecadvisor_kernel_capabilities c_capabilities{};
+  if (vecadvisor_distance_get_capabilities(&c_capabilities) != VECADVISOR_DISTANCE_OK ||
+      c_capabilities.l2_kernel == nullptr || c_capabilities.inner_product_kernel == nullptr ||
+      c_capabilities.cosine_kernel == nullptr) {
+    std::cerr << "C ABI capabilities call failed\n";
+    return 1;
+  }
   return 0;
 }

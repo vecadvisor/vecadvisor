@@ -6,18 +6,33 @@ option(VECADVISOR_NATIVE_BUILD_TESTS "Build native VecAdvisor tests" ON)
 option(VECADVISOR_NATIVE_BUILD_BENCHMARKS "Build native VecAdvisor benchmarks" ON)
 option(VECADVISOR_NATIVE_ENABLE_AVX2 "Build AVX2 distance kernels when supported" ON)
 
-add_library(vecadvisor_distance STATIC src/distance.cpp)
+add_library(vecadvisor_distance STATIC src/distance.cpp src/distance_c.cpp)
 target_include_directories(
   vecadvisor_distance
   PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 target_compile_features(vecadvisor_distance PUBLIC cxx_std_17)
+set_target_properties(vecadvisor_distance PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(vecadvisor_distance PROPERTIES OUTPUT_NAME vecadvisor_distance_static)
+target_compile_definitions(vecadvisor_distance PUBLIC VECADVISOR_NATIVE_STATIC=1)
+
+add_library(vecadvisor_distance_shared SHARED src/distance.cpp src/distance_c.cpp)
+target_include_directories(
+  vecadvisor_distance_shared
+  PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+target_compile_features(vecadvisor_distance_shared PUBLIC cxx_std_17)
+set_target_properties(vecadvisor_distance_shared PROPERTIES OUTPUT_NAME vecadvisor_distance)
+target_compile_definitions(vecadvisor_distance_shared PRIVATE VECADVISOR_NATIVE_BUILDING_DLL=1)
 
 if(MSVC)
   target_compile_options(vecadvisor_distance PRIVATE /W4 /permissive-)
+  target_compile_options(vecadvisor_distance_shared PRIVATE /W4 /permissive-)
 else()
   target_compile_options(vecadvisor_distance PRIVATE -Wall -Wextra -Wpedantic)
+  target_compile_options(vecadvisor_distance_shared PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
 set(VECADVISOR_AVX2_ENABLED OFF)
@@ -30,6 +45,7 @@ endif()
 if(VECADVISOR_NATIVE_ENABLE_AVX2 AND VECADVISOR_X86_LIKE)
   if(MSVC)
     target_sources(vecadvisor_distance PRIVATE src/distance_avx2.cpp)
+    target_sources(vecadvisor_distance_shared PRIVATE src/distance_avx2.cpp)
     set_source_files_properties(src/distance_avx2.cpp PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
     set(VECADVISOR_AVX2_ENABLED ON)
   else()
@@ -37,6 +53,7 @@ if(VECADVISOR_NATIVE_ENABLE_AVX2 AND VECADVISOR_X86_LIKE)
     check_cxx_compiler_flag("-mavx2" VECADVISOR_HAS_MAVX2)
     if(VECADVISOR_HAS_MAVX2)
       target_sources(vecadvisor_distance PRIVATE src/distance_avx2.cpp)
+      target_sources(vecadvisor_distance_shared PRIVATE src/distance_avx2.cpp)
       set_source_files_properties(src/distance_avx2.cpp PROPERTIES COMPILE_OPTIONS "-mavx2")
       set(VECADVISOR_AVX2_ENABLED ON)
     endif()
@@ -45,8 +62,10 @@ endif()
 
 if(VECADVISOR_AVX2_ENABLED)
   target_compile_definitions(vecadvisor_distance PRIVATE VECADVISOR_BUILD_AVX2=1)
+  target_compile_definitions(vecadvisor_distance_shared PRIVATE VECADVISOR_BUILD_AVX2=1)
 else()
   target_compile_definitions(vecadvisor_distance PRIVATE VECADVISOR_BUILD_AVX2=0)
+  target_compile_definitions(vecadvisor_distance_shared PRIVATE VECADVISOR_BUILD_AVX2=0)
 endif()
 
 if(VECADVISOR_NATIVE_BUILD_TESTS)

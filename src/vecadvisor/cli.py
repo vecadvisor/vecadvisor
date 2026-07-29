@@ -110,6 +110,13 @@ from .recommend import (
 from .selectivity import conjunction_selectivity
 from .statistics_advisor import suggest_statistics
 from .stats_health import assess_stats_health, stats_health_to_json
+from .workload import (
+    DEFAULT_WORKLOAD_LIMIT,
+    DEFAULT_WORKLOAD_MIN_CALLS,
+    WorkloadCollectionError,
+    collect_workload_shapes,
+    workload_report_to_json,
+)
 
 app = typer.Typer(
     help="Cost-based advisor for filtered pgvector search.",
@@ -186,6 +193,52 @@ def analyze(
             }
         )
     )
+
+
+@app.command(name="workload")
+def workload_command(
+    dsn: Annotated[str, typer.Option(help="PostgreSQL connection string.")],
+    limit: Annotated[
+        int,
+        typer.Option(
+            "--limit",
+            min=1,
+            help="Maximum pg_stat_statements rows to inspect, ordered by total time.",
+        ),
+    ] = DEFAULT_WORKLOAD_LIMIT,
+    min_calls: Annotated[
+        int,
+        typer.Option(
+            "--min-calls",
+            min=1,
+            help="Minimum pg_stat_statements calls for a statement to be inspected.",
+        ),
+    ] = DEFAULT_WORKLOAD_MIN_CALLS,
+    statement_timeout_ms: Annotated[
+        int,
+        typer.Option(
+            "--statement-timeout-ms",
+            min=1,
+            help="Statement timeout for pg_stat_statements catalog reads.",
+        ),
+    ] = 30_000,
+) -> None:
+    """Collect sanitized vector-query shapes from pg_stat_statements."""
+
+    try:
+        with connect(dsn) as conn:
+            report = collect_workload_shapes(
+                conn,
+                limit=limit,
+                min_calls=min_calls,
+                statement_timeout_ms=statement_timeout_ms,
+            )
+    except WorkloadCollectionError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    payload = workload_report_to_json(report)
+    payload["dsn"] = _redact_dsn(dsn)
+    console.print_json(json.dumps(payload))
 
 
 @app.command()

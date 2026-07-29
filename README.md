@@ -49,6 +49,7 @@ pgvector, but it is not affiliated with the official pgvector project.
 
 - [Design](https://github.com/vecadvisor/vecadvisor/blob/main/DESIGN.md)
 - [Predicate support](https://github.com/vecadvisor/vecadvisor/blob/main/docs/predicates.md)
+- [Workload collector](https://github.com/vecadvisor/vecadvisor/blob/main/docs/workload-collector.md)
 - [Native kernels](https://github.com/vecadvisor/vecadvisor/blob/main/docs/native-kernels.md)
 - [Benchmark artifacts](https://github.com/vecadvisor/vecadvisor/blob/main/docs/benchmarks/README.md)
 - [SIFT1M scale benchmark recipe](https://github.com/vecadvisor/vecadvisor/blob/main/docs/benchmarks/scale-benchmark.md)

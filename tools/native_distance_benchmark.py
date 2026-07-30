@@ -6,6 +6,7 @@ import json
 import platform
 import subprocess
 import sys
+import time
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -26,6 +27,22 @@ class NumpyValidation:
     dispatch_abs_error: float
     tolerance: float
     passed: bool
+
+
+@dataclass(frozen=True)
+class ExternalBaselineResult:
+    name: str
+    metric: str
+    available: bool
+    reason: str | None
+    seconds: float | None
+    checksum: float | None
+    distances: int
+    ns_per_distance: float | None
+    distances_per_second: float | None
+    checksum_abs_error: float | None
+    tolerance: float | None
+    passed: bool | None
 
 
 def generated_matrix(count: int, dim: int, salt: int) -> Any:
@@ -66,6 +83,121 @@ def numpy_metric_checksum(metric: str, rows: int, queries: int, dim: int) -> flo
     return checksum
 
 
+def run_external_baselines(
+    native_payload: dict[str, Any],
+    baseline_names: Sequence[str],
+) -> list[ExternalBaselineResult]:
+    rows = int(native_payload["rows"])
+    queries = int(native_payload["queries"])
+    dim = int(native_payload["dim"])
+    iterations = int(native_payload.get("iterations", 1))
+    metrics = [str(result["metric"]) for result in native_payload["results"]]
+    results: list[ExternalBaselineResult] = []
+    for baseline_name in baseline_names:
+        if baseline_name == "simsimd":
+            results.extend(
+                _run_simsimd_baseline(
+                    rows=rows,
+                    queries=queries,
+                    dim=dim,
+                    iterations=iterations,
+                    metrics=metrics,
+                )
+            )
+        else:
+            raise ValueError(f"unsupported external baseline: {baseline_name}")
+    return results
+
+
+def _run_simsimd_baseline(
+    *,
+    rows: int,
+    queries: int,
+    dim: int,
+    iterations: int,
+    metrics: Sequence[str],
+) -> list[ExternalBaselineResult]:
+    try:
+        import simsimd
+    except ImportError as exc:
+        return [
+            ExternalBaselineResult(
+                name="simsimd",
+                metric=metric,
+                available=False,
+                reason=str(exc),
+                seconds=None,
+                checksum=None,
+                distances=iterations * queries * rows,
+                ns_per_distance=None,
+                distances_per_second=None,
+                checksum_abs_error=None,
+                tolerance=None,
+                passed=None,
+            )
+            for metric in metrics
+        ]
+
+    np = _numpy()
+    corpus = generated_matrix(rows, dim, CORPUS_SALT)
+    query_vectors = generated_matrix(queries, dim, QUERY_SALT)
+    simsimd_metrics = {
+        "l2": "sqeuclidean",
+        "ip": "inner",
+        "cosine": "cosine",
+    }
+    results: list[ExternalBaselineResult] = []
+    for metric in metrics:
+        simsimd_metric = simsimd_metrics.get(metric)
+        if simsimd_metric is None:
+            results.append(
+                ExternalBaselineResult(
+                    name="simsimd",
+                    metric=metric,
+                    available=False,
+                    reason=f"metric {metric} is not supported by SimSIMD baseline",
+                    seconds=None,
+                    checksum=None,
+                    distances=iterations * queries * rows,
+                    ns_per_distance=None,
+                    distances_per_second=None,
+                    checksum_abs_error=None,
+                    tolerance=None,
+                    passed=None,
+                )
+            )
+            continue
+
+        checksum = 0.0
+        out = np.empty((queries, rows), dtype=np.float32)
+        start = time.perf_counter()
+        for _ in range(iterations):
+            simsimd.cdist(query_vectors, corpus, simsimd_metric, out=out)
+            checksum += float(out.sum(dtype=np.float64))
+        seconds = time.perf_counter() - start
+        distance_count = iterations * queries * rows
+        reference = numpy_metric_checksum(metric, rows, queries, dim) * iterations
+        tolerance = max(1.0e-2, abs(reference) * 5.0e-4)
+        checksum_error = abs(checksum - reference)
+        results.append(
+            ExternalBaselineResult(
+                name="simsimd",
+                metric=metric,
+                available=True,
+                reason=None,
+                seconds=seconds,
+                checksum=checksum,
+                distances=distance_count,
+                ns_per_distance=seconds * 1.0e9 / distance_count,
+                distances_per_second=distance_count / seconds if seconds > 0.0 else None,
+                checksum_abs_error=checksum_error,
+                tolerance=tolerance,
+                passed=checksum_error <= tolerance,
+            )
+        )
+    return results
+
+
 def validate_numpy_checksums(native_payload: dict[str, Any]) -> list[NumpyValidation]:
     if native_payload.get("data_generator") != GENERATOR_ID:
         raise ValueError("native payload uses an unknown data generator")
@@ -99,6 +231,10 @@ def validate_numpy_checksums(native_payload: dict[str, Any]) -> list[NumpyValida
 
 
 def render_markdown_report(payload: dict[str, Any], validations: Sequence[NumpyValidation]) -> str:
+    external_baselines = _external_baselines_from_payload(payload)
+    has_simsimd = any(
+        baseline.name == "simsimd" and baseline.available for baseline in external_baselines
+    )
     lines = [
         "# Native Distance Kernel Benchmark",
         "",
@@ -163,6 +299,45 @@ def render_markdown_report(payload: dict[str, Any], validations: Sequence[NumpyV
                 f"{validation.dispatch_abs_error:.6g} | {validation.tolerance:.6g} |"
             )
 
+    if external_baselines:
+        lines.extend(
+            [
+                "",
+                "## External Baselines",
+                "",
+                (
+                    "| baseline | metric | available | ns/dist | checksum abs error | "
+                    "tolerance | check |"
+                ),
+                "| --- | --- | --- | ---: | ---: | ---: | --- |",
+            ]
+        )
+        for baseline in external_baselines:
+            lines.append(
+                "| {name} | {metric} | {available} | {ns} | {error} | {tolerance} | "
+                "{check} |".format(
+                    name=baseline.name,
+                    metric=baseline.metric,
+                    available="yes" if baseline.available else "no",
+                    ns=(
+                        "n/a"
+                        if baseline.ns_per_distance is None
+                        else f"{baseline.ns_per_distance:.3f}"
+                    ),
+                    error=(
+                        "n/a"
+                        if baseline.checksum_abs_error is None
+                        else f"{baseline.checksum_abs_error:.6g}"
+                    ),
+                    tolerance=(
+                        "n/a"
+                        if baseline.tolerance is None
+                        else f"{baseline.tolerance:.6g}"
+                    ),
+                    check=_baseline_check_text(baseline),
+                )
+            )
+
     lines.extend(
         [
             "",
@@ -170,6 +345,14 @@ def render_markdown_report(payload: dict[str, Any], validations: Sequence[NumpyV
             "",
             "- `dispatch` is the runtime-selected kernel path used by future bindings.",
             "- `scalar` remains the correctness baseline for every SIMD implementation.",
+            *(
+                [
+                    "- `simsimd` is an optional external baseline and is not a VecAdvisor "
+                    "runtime dependency.",
+                ]
+                if has_simsimd
+                else []
+            ),
             "- Speedups are hardware-specific; regenerate this report on the target host.",
             "",
         ]
@@ -299,6 +482,7 @@ def render_svg_chart(payload: dict[str, Any], validations: Sequence[NumpyValidat
 def merge_payload(
     payload: dict[str, Any],
     validations: Sequence[NumpyValidation],
+    external_baselines: Sequence[ExternalBaselineResult] = (),
 ) -> dict[str, Any]:
     merged = dict(payload)
     merged["python_wrapper"] = {
@@ -315,6 +499,9 @@ def merge_payload(
                 "passed": validation.passed,
             }
             for validation in validations
+        ],
+        "external_baselines": [
+            _external_baseline_to_json(baseline) for baseline in external_baselines
         ],
     }
     return merged
@@ -390,6 +577,7 @@ def run_native_benchmark(
 def write_outputs(
     payload: dict[str, Any],
     validations: Sequence[NumpyValidation],
+    external_baselines: Sequence[ExternalBaselineResult],
     *,
     json_out: Path | None,
     markdown_out: Path | None,
@@ -398,15 +586,20 @@ def write_outputs(
     if json_out is not None:
         json_out.parent.mkdir(parents=True, exist_ok=True)
         json_out.write_text(
-            json.dumps(merge_payload(payload, validations), indent=2) + "\n",
+            json.dumps(merge_payload(payload, validations, external_baselines), indent=2)
+            + "\n",
             encoding="utf-8",
         )
+    render_payload = merge_payload(payload, validations, external_baselines)
     if markdown_out is not None:
         markdown_out.parent.mkdir(parents=True, exist_ok=True)
-        markdown_out.write_text(render_markdown_report(payload, validations), encoding="utf-8")
+        markdown_out.write_text(
+            render_markdown_report(render_payload, validations),
+            encoding="utf-8",
+        )
     if svg_out is not None:
         svg_out.parent.mkdir(parents=True, exist_ok=True)
-        svg_out.write_text(render_svg_chart(payload, validations), encoding="utf-8")
+        svg_out.write_text(render_svg_chart(render_payload, validations), encoding="utf-8")
 
 
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
@@ -431,6 +624,16 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--iterations", type=_positive_int, default=5)
     parser.add_argument("--metrics", default="l2,ip,cosine")
     parser.add_argument("--skip-numpy-validation", action="store_true")
+    parser.add_argument(
+        "--external-baselines",
+        default="",
+        help="Comma-separated optional external baselines to run, currently: simsimd.",
+    )
+    parser.add_argument(
+        "--require-external-baselines",
+        action="store_true",
+        help="Fail when a requested external baseline is unavailable or fails validation.",
+    )
     parser.add_argument(
         "--json-out",
         type=Path,
@@ -469,24 +672,60 @@ def main(argv: Sequence[str] | None = None) -> int:
         metrics=args.metrics,
     )
     validations = [] if args.skip_numpy_validation else validate_numpy_checksums(payload)
+    external_baselines = run_external_baselines(
+        payload,
+        _parse_external_baselines(args.external_baselines),
+    )
+    external_baselines_failed = any(
+        baseline.available is False or baseline.passed is False
+        for baseline in external_baselines
+    )
     if any(not validation.passed for validation in validations):
         write_outputs(
             payload,
             validations,
+            external_baselines,
             json_out=args.json_out,
             markdown_out=args.markdown_out,
             svg_out=args.svg_out,
         )
-        print(render_markdown_report(payload, validations))
+        print(
+            render_markdown_report(
+                merge_payload(payload, validations, external_baselines),
+                validations,
+            )
+        )
+        return 1
+    if args.require_external_baselines and external_baselines_failed:
+        write_outputs(
+            payload,
+            validations,
+            external_baselines,
+            json_out=args.json_out,
+            markdown_out=args.markdown_out,
+            svg_out=args.svg_out,
+        )
+        print(
+            render_markdown_report(
+                merge_payload(payload, validations, external_baselines),
+                validations,
+            )
+        )
         return 1
     write_outputs(
         payload,
         validations,
+        external_baselines,
         json_out=args.json_out,
         markdown_out=args.markdown_out,
         svg_out=args.svg_out,
     )
-    print(render_markdown_report(payload, validations))
+    print(
+        render_markdown_report(
+            merge_payload(payload, validations, external_baselines),
+            validations,
+        )
+    )
     return 0
 
 
@@ -503,6 +742,87 @@ def _numpy() -> Any:
     except ImportError as exc:
         raise RuntimeError("NumPy is required unless --skip-numpy-validation is used") from exc
     return np
+
+
+def _parse_external_baselines(value: str) -> tuple[str, ...]:
+    if not value.strip():
+        return ()
+    baselines = tuple(item.strip().lower() for item in value.split(",") if item.strip())
+    supported = {"simsimd"}
+    unsupported = sorted(set(baselines) - supported)
+    if unsupported:
+        raise argparse.ArgumentTypeError(
+            "unsupported external baseline(s): " + ", ".join(unsupported)
+        )
+    return baselines
+
+
+def _external_baseline_to_json(baseline: ExternalBaselineResult) -> dict[str, Any]:
+    return {
+        "name": baseline.name,
+        "metric": baseline.metric,
+        "available": baseline.available,
+        "reason": baseline.reason,
+        "seconds": baseline.seconds,
+        "checksum": baseline.checksum,
+        "distances": baseline.distances,
+        "ns_per_distance": baseline.ns_per_distance,
+        "distances_per_second": baseline.distances_per_second,
+        "checksum_abs_error": baseline.checksum_abs_error,
+        "tolerance": baseline.tolerance,
+        "passed": baseline.passed,
+    }
+
+
+def _external_baselines_from_payload(payload: dict[str, Any]) -> tuple[ExternalBaselineResult, ...]:
+    baselines = payload.get("python_wrapper", {}).get("external_baselines", [])
+    return tuple(
+        ExternalBaselineResult(
+            name=str(baseline["name"]),
+            metric=str(baseline["metric"]),
+            available=bool(baseline["available"]),
+            reason=(
+                str(baseline["reason"]) if baseline.get("reason") is not None else None
+            ),
+            seconds=(
+                float(baseline["seconds"]) if baseline.get("seconds") is not None else None
+            ),
+            checksum=(
+                float(baseline["checksum"]) if baseline.get("checksum") is not None else None
+            ),
+            distances=int(baseline["distances"]),
+            ns_per_distance=(
+                float(baseline["ns_per_distance"])
+                if baseline.get("ns_per_distance") is not None
+                else None
+            ),
+            distances_per_second=(
+                float(baseline["distances_per_second"])
+                if baseline.get("distances_per_second") is not None
+                else None
+            ),
+            checksum_abs_error=(
+                float(baseline["checksum_abs_error"])
+                if baseline.get("checksum_abs_error") is not None
+                else None
+            ),
+            tolerance=(
+                float(baseline["tolerance"]) if baseline.get("tolerance") is not None else None
+            ),
+            passed=(
+                bool(baseline["passed"]) if baseline.get("passed") is not None else None
+            ),
+        )
+        for baseline in baselines
+    )
+
+
+def _baseline_check_text(baseline: ExternalBaselineResult) -> str:
+    if not baseline.available:
+        return baseline.reason or "not available"
+    if baseline.passed is None:
+        return "not checked"
+    return "pass" if baseline.passed else "fail"
 
 
 def _run(command: Sequence[str]) -> None:

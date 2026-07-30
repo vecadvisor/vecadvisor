@@ -111,6 +111,63 @@ def test_render_report_and_chart_include_key_fields() -> None:
     assert "nanoseconds per distance" in svg
 
 
+def test_render_report_includes_external_baseline_when_present() -> None:
+    payload = {
+        "rows": 128,
+        "queries": 4,
+        "dim": 31,
+        "iterations": 1,
+        "capabilities": {"avx2_compiled": True, "avx2_runtime": True},
+        "results": [
+            {
+                "metric": "l2",
+                "selected_kernel": "avx2",
+                "scalar": {"ns_per_distance": 12.0},
+                "dispatch": {"ns_per_distance": 4.0},
+                "speedup_vs_scalar": 3.0,
+                "max_abs_error_vs_scalar": 0.0,
+            }
+        ],
+    }
+    baseline = bench.ExternalBaselineResult(
+        name="simsimd",
+        metric="l2",
+        available=True,
+        reason=None,
+        seconds=0.001,
+        checksum=10.0,
+        distances=128,
+        ns_per_distance=5.0,
+        distances_per_second=128000.0,
+        checksum_abs_error=0.0,
+        tolerance=0.01,
+        passed=True,
+    )
+    merged = bench.merge_payload(payload, [], [baseline])
+
+    markdown = bench.render_markdown_report(merged, [])
+    svg = bench.render_svg_chart(merged, [])
+
+    assert "External Baselines" in markdown
+    assert "| simsimd | l2 | yes | 5.000 | 0 | 0.01 | pass |" in markdown
+    assert "simsimd` is an optional external baseline" in markdown
+    assert "<svg" in svg
+
+
+def test_parse_external_baselines_rejects_unknown_name() -> None:
+    with pytest.raises(ValueError, match="unsupported external baseline"):
+        bench.run_external_baselines(
+            {
+                "rows": 1,
+                "queries": 1,
+                "dim": 1,
+                "iterations": 1,
+                "results": [{"metric": "unknown"}],
+            },
+            ("unknown",),
+        )
+
+
 def test_compare_combines_avx2_and_scalar_payloads() -> None:
     avx2_payload = _native_payload(
         avx2_compiled=True,
@@ -140,6 +197,37 @@ def test_compare_combines_avx2_and_scalar_payloads() -> None:
     assert "| l2 | avx2 | 4.000 | 10.000 | 2.500x" in markdown
     assert "<svg" in svg
     assert "AVX2 dispatch" in svg
+
+
+def test_compare_includes_simsimd_external_baseline() -> None:
+    avx2_payload = _native_payload(
+        avx2_compiled=True,
+        avx2_runtime=True,
+        selected_kernel="avx2",
+        dispatch_ns=4.0,
+        simsimd_ns=5.0,
+    )
+    scalar_payload = _native_payload(
+        avx2_compiled=False,
+        avx2_runtime=False,
+        selected_kernel="scalar",
+        dispatch_ns=10.0,
+    )
+
+    combined = compare.build_combined_payload(
+        avx2_payload,
+        scalar_payload,
+        avx2_source="avx2.json",
+        scalar_source="scalar.json",
+    )
+    markdown = compare.render_markdown_report(combined)
+    svg = compare.render_svg_chart(combined)
+
+    assert combined["summary"][0]["simsimd_ns_per_distance"] == pytest.approx(5.0)
+    assert combined["summary"][0]["avx2_vs_simsimd_ratio"] == pytest.approx(0.8)
+    assert "SimSIMD ns/dist" in markdown
+    assert "| l2 | avx2 | 4.000 | 5.000 | 0.800x | 10.000 | 2.500x" in markdown
+    assert "SimSIMD" in svg
 
 
 def test_compare_rejects_mismatched_payloads() -> None:
@@ -172,8 +260,9 @@ def _native_payload(
     avx2_runtime: bool,
     selected_kernel: str,
     dispatch_ns: float,
+    simsimd_ns: float | None = None,
 ) -> dict[str, object]:
-    return {
+    payload: dict[str, object] = {
         "schema_version": 1,
         "rows": 128,
         "queries": 4,
@@ -196,5 +285,26 @@ def _native_payload(
         "python_wrapper": {
             "platform": "test-platform",
             "numpy_validation": [{"metric": "l2", "passed": True}],
+            "external_baselines": [],
         },
     }
+    if simsimd_ns is not None:
+        python_wrapper = payload["python_wrapper"]
+        assert isinstance(python_wrapper, dict)
+        python_wrapper["external_baselines"] = [
+            {
+                "name": "simsimd",
+                "metric": "l2",
+                "available": True,
+                "reason": None,
+                "seconds": 0.001,
+                "checksum": 10.0,
+                "distances": 128,
+                "ns_per_distance": simsimd_ns,
+                "distances_per_second": 128000.0,
+                "checksum_abs_error": 0.0,
+                "tolerance": 0.01,
+                "passed": True,
+            }
+        ]
+    return payload

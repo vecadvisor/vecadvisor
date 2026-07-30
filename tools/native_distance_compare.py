@@ -30,6 +30,13 @@ def build_combined_payload(
         avx2_dispatch_ns = float(avx2_result["dispatch"]["ns_per_distance"])
         scalar_dispatch_ns = float(scalar_result["dispatch"]["ns_per_distance"])
         speedup = scalar_dispatch_ns / avx2_dispatch_ns if avx2_dispatch_ns > 0.0 else None
+        simsimd_baseline = _external_baseline(avx2_payload, name="simsimd", metric=metric)
+        simsimd_ns = (
+            float(simsimd_baseline["ns_per_distance"])
+            if simsimd_baseline is not None
+            and simsimd_baseline.get("ns_per_distance") is not None
+            else None
+        )
         summary.append(
             {
                 "metric": metric,
@@ -41,6 +48,18 @@ def build_combined_payload(
                 ),
                 "scalar_fallback_dispatch_ns_per_distance": scalar_dispatch_ns,
                 "speedup_vs_scalar_fallback": speedup,
+                "simsimd_ns_per_distance": simsimd_ns,
+                "avx2_vs_simsimd_ratio": (
+                    avx2_dispatch_ns / simsimd_ns
+                    if simsimd_ns is not None and simsimd_ns > 0.0
+                    else None
+                ),
+                "simsimd_check_passed": (
+                    bool(simsimd_baseline["passed"])
+                    if simsimd_baseline is not None
+                    and simsimd_baseline.get("passed") is not None
+                    else None
+                ),
                 "avx2_max_abs_error_vs_scalar": float(
                     avx2_result["max_abs_error_vs_scalar"]
                 ),
@@ -70,6 +89,7 @@ def build_combined_payload(
 def render_markdown_report(combined: dict[str, Any]) -> str:
     avx2_run = combined["runs"][0]
     scalar_run = combined["runs"][1]
+    has_simsimd = any(row.get("simsimd_ns_per_distance") is not None for row in combined["summary"])
     lines = [
         "# Native Distance Kernel Benchmark",
         "",
@@ -87,23 +107,56 @@ def render_markdown_report(combined: dict[str, Any]) -> str:
         f"- AVX2 runtime available: `{avx2_run['capabilities']['avx2_runtime']}`",
         f"- scalar build compiled AVX2: `{scalar_run['capabilities']['avx2_compiled']}`",
         "",
-        (
-            "| metric | AVX2 kernel | AVX2 ns/dist | scalar fallback ns/dist | "
-            "speedup | max AVX2 error | NumPy checks |"
-        ),
-        "| --- | --- | ---: | ---: | ---: | ---: | --- |",
     ]
+    if has_simsimd:
+        lines.extend(
+            [
+                (
+                    "| metric | AVX2 kernel | AVX2 ns/dist | SimSIMD ns/dist | "
+                    "AVX2/SimSIMD | scalar fallback ns/dist | speedup | "
+                    "max AVX2 error | checks |"
+                ),
+                "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+            ]
+        )
+    else:
+        lines.extend(
+            [
+                (
+                    "| metric | AVX2 kernel | AVX2 ns/dist | scalar fallback ns/dist | "
+                    "speedup | max AVX2 error | NumPy checks |"
+                ),
+                "| --- | --- | ---: | ---: | ---: | ---: | --- |",
+            ]
+        )
     for row in combined["summary"]:
         speedup = row["speedup_vs_scalar_fallback"]
         speedup_text = "n/a" if speedup is None else f"{float(speedup):.3f}x"
         check_text = "pass" if row["numpy_checks_passed"] else "fail"
-        lines.append(
-            f"| {row['metric']} | {row['avx2_selected_kernel']} | "
-            f"{float(row['avx2_dispatch_ns_per_distance']):.3f} | "
-            f"{float(row['scalar_fallback_dispatch_ns_per_distance']):.3f} | "
-            f"{speedup_text} | {float(row['avx2_max_abs_error_vs_scalar']):.6g} | "
-            f"{check_text} |"
-        )
+        if has_simsimd:
+            simsimd_ns = row.get("simsimd_ns_per_distance")
+            simsimd_ratio = row.get("avx2_vs_simsimd_ratio")
+            simsimd_check = row.get("simsimd_check_passed")
+            checks = check_text
+            if simsimd_check is not None:
+                checks += f" / simsimd:{'pass' if simsimd_check else 'fail'}"
+            lines.append(
+                f"| {row['metric']} | {row['avx2_selected_kernel']} | "
+                f"{float(row['avx2_dispatch_ns_per_distance']):.3f} | "
+                f"{_optional_float_text(simsimd_ns)} | "
+                f"{_optional_ratio_text(simsimd_ratio)} | "
+                f"{float(row['scalar_fallback_dispatch_ns_per_distance']):.3f} | "
+                f"{speedup_text} | {float(row['avx2_max_abs_error_vs_scalar']):.6g} | "
+                f"{checks} |"
+            )
+        else:
+            lines.append(
+                f"| {row['metric']} | {row['avx2_selected_kernel']} | "
+                f"{float(row['avx2_dispatch_ns_per_distance']):.3f} | "
+                f"{float(row['scalar_fallback_dispatch_ns_per_distance']):.3f} | "
+                f"{speedup_text} | {float(row['avx2_max_abs_error_vs_scalar']):.6g} | "
+                f"{check_text} |"
+            )
 
     lines.extend(
         [
@@ -117,6 +170,18 @@ def render_markdown_report(combined: dict[str, Any]) -> str:
                 "`-DVECADVISOR_NATIVE_ENABLE_AVX2=OFF`, so it verifies the portable path "
                 "used on machines without AVX2 support."
             ),
+            *(
+                [
+                    "",
+                    (
+                        "`SimSIMD ns/dist` is an optional external baseline measured by "
+                        "the Python benchmark wrapper on the same deterministic matrices. "
+                        "`AVX2/SimSIMD` is a latency ratio; lower is better for VecAdvisor."
+                    ),
+                ]
+                if has_simsimd
+                else []
+            ),
             "",
             "## Reproduce",
             "",
@@ -127,6 +192,7 @@ def render_markdown_report(combined: dict[str, Any]) -> str:
             f"  --queries {combined['queries']} \\",
             f"  --dim {combined['dim']} \\",
             f"  --iterations {combined['iterations']} \\",
+            "  --external-baselines simsimd \\",
             "  --json-out native/build-avx2/native-distance-kernels.json \\",
             "  --markdown-out native/build-avx2/native-distance-kernels.md \\",
             "  --svg-out native/build-avx2/native-distance-kernels.svg",
@@ -167,16 +233,20 @@ def render_svg_chart(combined: dict[str, Any]) -> str:
     plot_width = width - margin_left - margin_right
     plot_height = height - margin_top - margin_bottom
     rows = list(combined["summary"])
+    has_simsimd = any(row.get("simsimd_ns_per_distance") is not None for row in rows)
     max_value = max(
         max(
             float(row["avx2_dispatch_ns_per_distance"]),
             float(row["scalar_fallback_dispatch_ns_per_distance"]),
+            float(row["simsimd_ns_per_distance"])
+            if row.get("simsimd_ns_per_distance") is not None
+            else 0.0,
         )
         for row in rows
     )
     y_max = max(max_value * 1.15, 1.0)
     group_width = plot_width / max(len(rows), 1)
-    bar_width = min(60.0, group_width * 0.24)
+    bar_width = min(52.0, group_width * (0.18 if has_simsimd else 0.24))
     baseline = margin_top + plot_height
 
     def y(value: float) -> float:
@@ -231,8 +301,10 @@ def render_svg_chart(combined: dict[str, Any]) -> str:
         center = margin_left + group_width * (index + 0.5)
         avx2_value = float(row["avx2_dispatch_ns_per_distance"])
         scalar_value = float(row["scalar_fallback_dispatch_ns_per_distance"])
-        avx2_x = center - bar_width - 4
-        scalar_x = center + 4
+        simsimd_value = row.get("simsimd_ns_per_distance")
+        avx2_x = center - bar_width - 4 if not has_simsimd else center - 1.5 * bar_width - 6
+        simsimd_x = center - bar_width / 2.0 if has_simsimd else center
+        scalar_x = center + 4 if not has_simsimd else center + 0.5 * bar_width + 6
         lines.extend(
             [
                 (
@@ -244,6 +316,18 @@ def render_svg_chart(combined: dict[str, Any]) -> str:
                     f'<rect x="{scalar_x:.2f}" y="{y(scalar_value):.2f}" '
                     f'width="{bar_width:.2f}" height="{baseline - y(scalar_value):.2f}" '
                     'fill="#dc2626"/>'
+                ),
+                *(
+                    [
+                        (
+                            f'<rect x="{simsimd_x:.2f}" y="{y(float(simsimd_value)):.2f}" '
+                            f'width="{bar_width:.2f}" '
+                            f'height="{baseline - y(float(simsimd_value)):.2f}" '
+                            'fill="#7c3aed"/>'
+                        )
+                    ]
+                    if has_simsimd and simsimd_value is not None
+                    else []
                 ),
                 (
                     f'<text x="{center:.2f}" y="{baseline + 26:.2f}" '
@@ -262,14 +346,25 @@ def render_svg_chart(combined: dict[str, Any]) -> str:
 
     lines.extend(
         [
-            '<rect x="694" y="28" width="12" height="12" fill="#2563eb"/>',
+            '<rect x="620" y="28" width="12" height="12" fill="#2563eb"/>',
             (
-                '<text x="712" y="38" font-family="Arial, sans-serif" '
+                '<text x="638" y="38" font-family="Arial, sans-serif" '
                 'font-size="12" fill="#334155">AVX2 dispatch</text>'
             ),
-            '<rect x="814" y="28" width="12" height="12" fill="#dc2626"/>',
+            *(
+                [
+                    '<rect x="744" y="28" width="12" height="12" fill="#7c3aed"/>',
+                    (
+                        '<text x="762" y="38" font-family="Arial, sans-serif" '
+                        'font-size="12" fill="#334155">SimSIMD</text>'
+                    ),
+                ]
+                if has_simsimd
+                else []
+            ),
+            '<rect x="838" y="28" width="12" height="12" fill="#dc2626"/>',
             (
-                '<text x="832" y="38" font-family="Arial, sans-serif" '
+                '<text x="856" y="38" font-family="Arial, sans-serif" '
                 'font-size="12" fill="#334155">scalar fallback</text>'
             ),
             "</svg>",
@@ -357,6 +452,10 @@ def _run_payload(name: str, payload: dict[str, Any], source: str) -> dict[str, A
         "capabilities": payload["capabilities"],
         "results": payload["results"],
         "numpy_validation": payload.get("python_wrapper", {}).get("numpy_validation", []),
+        "external_baselines": payload.get("python_wrapper", {}).get(
+            "external_baselines",
+            [],
+        ),
     }
 
 
@@ -366,6 +465,31 @@ def _numpy_checks_passed(payload: dict[str, Any], metric: str) -> bool:
         if validation.get("metric") == metric:
             return bool(validation.get("passed"))
     return False
+
+
+def _external_baseline(
+    payload: dict[str, Any],
+    *,
+    name: str,
+    metric: str,
+) -> dict[str, Any] | None:
+    baselines = payload.get("python_wrapper", {}).get("external_baselines", [])
+    for baseline in baselines:
+        if (
+            baseline.get("name") == name
+            and baseline.get("metric") == metric
+            and baseline.get("available") is True
+        ):
+            return baseline
+    return None
+
+
+def _optional_float_text(value: object) -> str:
+    return "n/a" if value is None else f"{float(value):.3f}"
+
+
+def _optional_ratio_text(value: object) -> str:
+    return "n/a" if value is None else f"{float(value):.3f}x"
 
 
 if __name__ == "__main__":

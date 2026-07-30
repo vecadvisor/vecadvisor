@@ -125,6 +125,26 @@ python tools/native_distance_benchmark.py \
   --iterations 5
 ```
 
+Add an optional SimSIMD baseline when the `simsimd` Python package is
+installed:
+
+```bash
+python tools/native_distance_benchmark.py \
+  --rows 4096 \
+  --queries 16 \
+  --dim 128 \
+  --iterations 5 \
+  --external-baselines simsimd
+```
+
+SimSIMD is used only by the benchmark wrapper. It is not a VecAdvisor runtime
+dependency and is not required to build or use the CLI. The committed Native CI
+artifact runs this optional baseline so the public report compares VecAdvisor
+AVX2 dispatch against both the local scalar fallback and an external SIMD
+library. hnswlib is deferred for now because its primary value is ANN index
+behavior rather than a direct drop-in distance-kernel baseline; it fits better
+with the planned native top-k / exact-ground-truth work.
+
 The wrapper builds the native target by default, runs the benchmark, validates
 scalar and dispatch checksums against deterministic NumPy data, and writes:
 

@@ -6,29 +6,34 @@
 <line x1="82" y1="448.00" x2="944" y2="448.00" stroke="#e2e8f0" stroke-width="1"/>
 <text x="72" y="452.00" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#475569">0.0</text>
 <line x1="82" y1="357.00" x2="944" y2="357.00" stroke="#e2e8f0" stroke-width="1"/>
-<text x="72" y="361.00" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#475569">38.2</text>
+<text x="72" y="361.00" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#475569">34.7</text>
 <line x1="82" y1="266.00" x2="944" y2="266.00" stroke="#e2e8f0" stroke-width="1"/>
-<text x="72" y="270.00" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#475569">76.4</text>
+<text x="72" y="270.00" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#475569">69.5</text>
 <line x1="82" y1="175.00" x2="944" y2="175.00" stroke="#e2e8f0" stroke-width="1"/>
-<text x="72" y="179.00" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#475569">114.6</text>
+<text x="72" y="179.00" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#475569">104.2</text>
 <line x1="82" y1="84.00" x2="944" y2="84.00" stroke="#e2e8f0" stroke-width="1"/>
-<text x="72" y="88.00" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#475569">152.8</text>
+<text x="72" y="88.00" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#475569">139.0</text>
 <line x1="82" y1="448" x2="944" y2="448" stroke="#94a3b8" stroke-width="1"/>
 <text x="24" y="266.00" font-family="Arial, sans-serif" font-size="12" fill="#334155" transform="rotate(-90 24 266.00)">nanoseconds per distance</text>
-<rect x="161.67" y="420.68" width="60.00" height="27.32" fill="#2563eb"/>
-<rect x="229.67" y="247.84" width="60.00" height="200.16" fill="#dc2626"/>
+<rect x="142.09" y="406.72" width="51.72" height="41.28" fill="#2563eb"/>
+<rect x="257.53" y="228.79" width="51.72" height="219.21" fill="#dc2626"/>
+<rect x="199.81" y="394.18" width="51.72" height="53.82" fill="#7c3aed"/>
 <text x="225.67" y="474.00" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#0f172a">l2</text>
-<text x="225.67" y="494.00" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#475569">7.33x faster</text>
-<rect x="449.00" y="421.11" width="60.00" height="26.89" fill="#2563eb"/>
-<rect x="517.00" y="252.19" width="60.00" height="195.81" fill="#dc2626"/>
+<text x="225.67" y="494.00" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#475569">5.31x faster</text>
+<rect x="429.42" y="410.41" width="51.72" height="37.59" fill="#2563eb"/>
+<rect x="544.86" y="245.35" width="51.72" height="202.65" fill="#dc2626"/>
+<rect x="487.14" y="394.48" width="51.72" height="53.52" fill="#7c3aed"/>
 <text x="513.00" y="474.00" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#0f172a">ip</text>
-<text x="513.00" y="494.00" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#475569">7.28x faster</text>
-<rect x="736.33" y="397.96" width="60.00" height="50.04" fill="#2563eb"/>
-<rect x="804.33" y="131.48" width="60.00" height="316.52" fill="#dc2626"/>
+<text x="513.00" y="494.00" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#475569">5.39x faster</text>
+<rect x="716.75" y="385.59" width="51.72" height="62.41" fill="#2563eb"/>
+<rect x="832.19" y="131.48" width="51.72" height="316.52" fill="#dc2626"/>
+<rect x="774.47" y="367.20" width="51.72" height="80.80" fill="#7c3aed"/>
 <text x="800.33" y="474.00" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#0f172a">cosine</text>
-<text x="800.33" y="494.00" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#475569">6.33x faster</text>
-<rect x="694" y="28" width="12" height="12" fill="#2563eb"/>
-<text x="712" y="38" font-family="Arial, sans-serif" font-size="12" fill="#334155">AVX2 dispatch</text>
-<rect x="814" y="28" width="12" height="12" fill="#dc2626"/>
-<text x="832" y="38" font-family="Arial, sans-serif" font-size="12" fill="#334155">scalar fallback</text>
+<text x="800.33" y="494.00" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#475569">5.07x faster</text>
+<rect x="620" y="28" width="12" height="12" fill="#2563eb"/>
+<text x="638" y="38" font-family="Arial, sans-serif" font-size="12" fill="#334155">AVX2 dispatch</text>
+<rect x="744" y="28" width="12" height="12" fill="#7c3aed"/>
+<text x="762" y="38" font-family="Arial, sans-serif" font-size="12" fill="#334155">SimSIMD</text>
+<rect x="838" y="28" width="12" height="12" fill="#dc2626"/>
+<text x="856" y="38" font-family="Arial, sans-serif" font-size="12" fill="#334155">scalar fallback</text>
 </svg>

@@ -19,60 +19,60 @@
           "metric": "l2",
           "selected_kernel": "avx2",
           "scalar": {
-            "seconds": 0.006794549,
+            "seconds": 0.006849234,
             "checksum": 7027402.31182,
             "distances": 81920,
-            "ns_per_distance": 82.9412719727,
-            "distances_per_second": 12056723.706
+            "ns_per_distance": 83.6088134766,
+            "distances_per_second": 11960461.564
           },
           "dispatch": {
-            "seconds": 0.001353663,
-            "checksum": 7027402.17039,
+            "seconds": 0.000939759,
+            "checksum": 7027402.19372,
             "distances": 81920,
-            "ns_per_distance": 16.524206543,
-            "distances_per_second": 60517277.934
+            "ns_per_distance": 11.4716674805,
+            "distances_per_second": 87171285.404
           },
-          "speedup_vs_scalar": 5.01938000817,
+          "speedup_vs_scalar": 7.28828774186,
           "max_abs_error_vs_scalar": 5.34057617188e-05
         },
         {
           "metric": "ip",
           "selected_kernel": "avx2",
           "scalar": {
-            "seconds": 0.006352312,
+            "seconds": 0.006793752,
             "checksum": 5036.27721052,
             "distances": 81920,
-            "ns_per_distance": 77.5428710937,
-            "distances_per_second": 12896092.0056
+            "ns_per_distance": 82.9315429687,
+            "distances_per_second": 12058138.1246
           },
           "dispatch": {
-            "seconds": 0.001477946,
-            "checksum": 5036.27609394,
+            "seconds": 0.000924987,
+            "checksum": 5036.2756934,
             "distances": 81920,
-            "ns_per_distance": 18.0413330078,
-            "distances_per_second": 55428276.8112
+            "ns_per_distance": 11.2913452148,
+            "distances_per_second": 88563406.8371
           },
-          "speedup_vs_scalar": 4.29806772372,
+          "speedup_vs_scalar": 7.34469997957,
           "max_abs_error_vs_scalar": 4.76837158203e-06
         },
         {
           "metric": "cosine",
           "selected_kernel": "avx2",
           "scalar": {
-            "seconds": 0.009991926,
+            "seconds": 0.010833333,
             "checksum": 81801.5309674,
             "distances": 81920,
-            "ns_per_distance": 121.97175293,
-            "distances_per_second": 8198619.56544
+            "ns_per_distance": 132.242834473,
+            "distances_per_second": 7561846.38652
           },
           "dispatch": {
-            "seconds": 0.002126641,
+            "seconds": 0.001721214,
             "checksum": 81801.5310025,
             "distances": 81920,
-            "ns_per_distance": 25.9599731445,
-            "distances_per_second": 38520841.0823
+            "ns_per_distance": 21.0109130859,
+            "distances_per_second": 47594314.2456
           },
-          "speedup_vs_scalar": 4.69845451113,
+          "speedup_vs_scalar": 6.29400702063,
           "max_abs_error_vs_scalar": 1.19209289551e-07
         }
       ],
@@ -81,9 +81,9 @@
           "metric": "l2",
           "reference_checksum": 7027402.169723511,
           "scalar_checksum": 7027402.31182,
-          "dispatch_checksum": 7027402.17039,
+          "dispatch_checksum": 7027402.19372,
           "scalar_abs_error": 0.14209648966789246,
-          "dispatch_abs_error": 0.0006664888933300972,
+          "dispatch_abs_error": 0.023996489122509956,
           "tolerance": 3513.7010848617556,
           "passed": true
         },
@@ -91,9 +91,9 @@
           "metric": "ip",
           "reference_checksum": 5036.276103965938,
           "scalar_checksum": 5036.27721052,
-          "dispatch_checksum": 5036.27609394,
+          "dispatch_checksum": 5036.2756934,
           "scalar_abs_error": 0.0011065540620620595,
-          "dispatch_abs_error": 1.0025938536273316e-05,
+          "dispatch_abs_error": 0.00041056593818211695,
           "tolerance": 2.518138051982969,
           "passed": true
         },
@@ -122,60 +122,60 @@
           "metric": "l2",
           "selected_kernel": "scalar",
           "scalar": {
-            "seconds": 0.006801212,
+            "seconds": 0.006886339,
             "checksum": 7027402.31182,
             "distances": 81920,
-            "ns_per_distance": 83.0226074219,
-            "distances_per_second": 12044911.9951
+            "ns_per_distance": 84.0617553711,
+            "distances_per_second": 11896016.156
           },
           "dispatch": {
-            "seconds": 0.006720722,
+            "seconds": 0.006884636,
             "checksum": 7027402.31182,
             "distances": 81920,
-            "ns_per_distance": 82.0400634766,
-            "distances_per_second": 12189166.5806
+            "ns_per_distance": 84.0409667969,
+            "distances_per_second": 11898958.783
           },
-          "speedup_vs_scalar": 1.01197639182,
+          "speedup_vs_scalar": 1.00024736239,
           "max_abs_error_vs_scalar": 0
         },
         {
           "metric": "ip",
           "selected_kernel": "scalar",
           "scalar": {
-            "seconds": 0.006280438,
+            "seconds": 0.006766641,
             "checksum": 5036.27721052,
             "distances": 81920,
-            "ns_per_distance": 76.6655029297,
-            "distances_per_second": 13043676.2532
+            "ns_per_distance": 82.6005981445,
+            "distances_per_second": 12106449.8619
           },
           "dispatch": {
-            "seconds": 0.006377368,
+            "seconds": 0.006734825,
             "checksum": 5036.27721052,
             "distances": 81920,
-            "ns_per_distance": 77.8487304688,
-            "distances_per_second": 12845424.6329
+            "ns_per_distance": 82.2122192383,
+            "distances_per_second": 12163641.9655
           },
-          "speedup_vs_scalar": 0.984800939823,
+          "speedup_vs_scalar": 1.00472410196,
           "max_abs_error_vs_scalar": 0
         },
         {
           "metric": "cosine",
           "selected_kernel": "scalar",
           "scalar": {
-            "seconds": 0.009969463,
+            "seconds": 0.010805632,
             "checksum": 81801.5309674,
             "distances": 81920,
-            "ns_per_distance": 121.697546387,
-            "distances_per_second": 8217092.53548
+            "ns_per_distance": 131.9046875,
+            "distances_per_second": 7581231.71324
           },
           "dispatch": {
-            "seconds": 0.010029686,
+            "seconds": 0.010886942,
             "checksum": 81801.5309674,
             "distances": 81920,
-            "ns_per_distance": 122.43269043,
-            "distances_per_second": 8167753.20783
+            "ns_per_distance": 132.897241211,
+            "distances_per_second": 7524610.6758
           },
-          "speedup_vs_scalar": 0.993995524885,
+          "speedup_vs_scalar": 0.99253141975,
           "max_abs_error_vs_scalar": 0
         }
       ],
@@ -218,10 +218,10 @@
       "metric": "l2",
       "avx2_selected_kernel": "avx2",
       "scalar_fallback_selected_kernel": "scalar",
-      "avx2_dispatch_ns_per_distance": 16.524206543,
-      "avx2_scalar_ns_per_distance": 82.9412719727,
-      "scalar_fallback_dispatch_ns_per_distance": 82.0400634766,
-      "speedup_vs_scalar_fallback": 4.964841323128698,
+      "avx2_dispatch_ns_per_distance": 11.4716674805,
+      "avx2_scalar_ns_per_distance": 83.6088134766,
+      "scalar_fallback_dispatch_ns_per_distance": 84.0409667969,
+      "speedup_vs_scalar_fallback": 7.3259591022627,
       "avx2_max_abs_error_vs_scalar": 5.34057617188e-05,
       "scalar_fallback_max_abs_error_vs_scalar": 0.0,
       "numpy_checks_passed": true
@@ -230,10 +230,10 @@
       "metric": "ip",
       "avx2_selected_kernel": "avx2",
       "scalar_fallback_selected_kernel": "scalar",
-      "avx2_dispatch_ns_per_distance": 18.0413330078,
-      "avx2_scalar_ns_per_distance": 77.5428710937,
-      "scalar_fallback_dispatch_ns_per_distance": 77.8487304688,
-      "speedup_vs_scalar_fallback": 4.31502098182783,
+      "avx2_dispatch_ns_per_distance": 11.2913452148,
+      "avx2_scalar_ns_per_distance": 82.9315429687,
+      "scalar_fallback_dispatch_ns_per_distance": 82.2122192383,
+      "speedup_vs_scalar_fallback": 7.28099421940809,
       "avx2_max_abs_error_vs_scalar": 4.76837158203e-06,
       "scalar_fallback_max_abs_error_vs_scalar": 0.0,
       "numpy_checks_passed": true
@@ -242,10 +242,10 @@
       "metric": "cosine",
       "avx2_selected_kernel": "avx2",
       "scalar_fallback_selected_kernel": "scalar",
-      "avx2_dispatch_ns_per_distance": 25.9599731445,
-      "avx2_scalar_ns_per_distance": 121.97175293,
-      "scalar_fallback_dispatch_ns_per_distance": 122.43269043,
-      "speedup_vs_scalar_fallback": 4.716210211332177,
+      "avx2_dispatch_ns_per_distance": 21.0109130859,
+      "avx2_scalar_ns_per_distance": 132.242834473,
+      "scalar_fallback_dispatch_ns_per_distance": 132.897241211,
+      "speedup_vs_scalar_fallback": 6.325153060586627,
       "avx2_max_abs_error_vs_scalar": 1.19209289551e-07,
       "scalar_fallback_max_abs_error_vs_scalar": 0.0,
       "numpy_checks_passed": true

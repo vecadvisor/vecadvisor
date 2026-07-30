@@ -488,7 +488,7 @@ Build the optional native distance kernels when a C++17 compiler and CMake are
 available:
 
 ```bash
-cmake -S native -B native/build -DCMAKE_BUILD_TYPE=Release
+cmake -S native -B native/build
 cmake --build native/build --config Release --parallel
 ctest --test-dir native/build --output-on-failure
 ```

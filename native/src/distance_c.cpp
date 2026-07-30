@@ -81,6 +81,14 @@ vecadvisor_distance_status vecadvisor_distance_compute_many(
   if (kernel == nullptr) {
     return VECADVISOR_DISTANCE_UNSUPPORTED_METRIC;
   }
+  if (metric == VECADVISOR_DISTANCE_COSINE) {
+    const float query_norm = vecadvisor::native::l2_norm(query, dim);
+    for (std::size_t row = 0; row < rows; ++row) {
+      out[row] = vecadvisor::native::cosine_distance_with_left_norm(
+          query, query_norm, corpus + row * dim, dim);
+    }
+    return VECADVISOR_DISTANCE_OK;
+  }
   for (std::size_t row = 0; row < rows; ++row) {
     out[row] = kernel(query, corpus + row * dim, dim);
   }

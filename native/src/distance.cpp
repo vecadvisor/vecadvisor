@@ -18,12 +18,19 @@ namespace vecadvisor::native {
 float l2_squared_avx2(const float* left, const float* right, std::size_t dim) noexcept;
 float inner_product_avx2(const float* left, const float* right, std::size_t dim) noexcept;
 float cosine_distance_avx2(const float* left, const float* right, std::size_t dim) noexcept;
+float l2_norm_avx2(const float* value, std::size_t dim) noexcept;
+float cosine_distance_with_left_norm_avx2(
+    const float* left,
+    float left_norm,
+    const float* right,
+    std::size_t dim) noexcept;
 #endif
 
 namespace {
 
 constexpr float kMinNorm = 1.0e-12F;
 
+#if VECADVISOR_BUILD_AVX2
 bool cpu_supports_avx2() noexcept {
 #if defined(_MSC_VER) && (defined(_M_X64) || defined(_M_IX86))
   int leaf0[4] = {0, 0, 0, 0};
@@ -36,7 +43,8 @@ bool cpu_supports_avx2() noexcept {
   __cpuidex(leaf1, 1, 0);
   const bool osxsave = (leaf1[2] & (1 << 27)) != 0;
   const bool avx = (leaf1[2] & (1 << 28)) != 0;
-  if (!osxsave || !avx) {
+  const bool fma = (leaf1[2] & (1 << 12)) != 0;
+  if (!osxsave || !avx || !fma) {
     return false;
   }
 
@@ -61,7 +69,8 @@ bool cpu_supports_avx2() noexcept {
   }
   const bool osxsave = (ecx & bit_OSXSAVE) != 0;
   const bool avx = (ecx & bit_AVX) != 0;
-  if (!osxsave || !avx) {
+  const bool fma = (ecx & bit_FMA) != 0;
+  if (!osxsave || !avx || !fma) {
     return false;
   }
 
@@ -83,6 +92,7 @@ bool cpu_supports_avx2() noexcept {
   return false;
 #endif
 }
+#endif
 
 bool avx2_enabled() noexcept {
 #if VECADVISOR_BUILD_AVX2
@@ -127,6 +137,31 @@ float cosine_distance_scalar(const float* left, const float* right, std::size_t 
   return 1.0F - dot / denominator;
 }
 
+float l2_norm_scalar(const float* value, std::size_t dim) noexcept {
+  float sum = 0.0F;
+  for (std::size_t index = 0; index < dim; ++index) {
+    sum += value[index] * value[index];
+  }
+  return std::sqrt(sum);
+}
+
+float cosine_distance_with_left_norm_scalar(
+    const float* left,
+    float left_norm,
+    const float* right,
+    std::size_t dim) noexcept {
+  float dot = 0.0F;
+  float right_norm = 0.0F;
+  for (std::size_t index = 0; index < dim; ++index) {
+    const float left_value = left[index];
+    const float right_value = right[index];
+    dot += left_value * right_value;
+    right_norm += right_value * right_value;
+  }
+  const float denominator = std::max(left_norm * std::sqrt(right_norm), kMinNorm);
+  return 1.0F - dot / denominator;
+}
+
 float l2_squared(const float* left, const float* right, std::size_t dim) noexcept {
 #if VECADVISOR_BUILD_AVX2
   if (avx2_enabled()) {
@@ -152,6 +187,28 @@ float cosine_distance(const float* left, const float* right, std::size_t dim) no
   }
 #endif
   return cosine_distance_scalar(left, right, dim);
+}
+
+float l2_norm(const float* value, std::size_t dim) noexcept {
+#if VECADVISOR_BUILD_AVX2
+  if (avx2_enabled()) {
+    return l2_norm_avx2(value, dim);
+  }
+#endif
+  return l2_norm_scalar(value, dim);
+}
+
+float cosine_distance_with_left_norm(
+    const float* left,
+    float left_norm,
+    const float* right,
+    std::size_t dim) noexcept {
+#if VECADVISOR_BUILD_AVX2
+  if (avx2_enabled()) {
+    return cosine_distance_with_left_norm_avx2(left, left_norm, right, dim);
+  }
+#endif
+  return cosine_distance_with_left_norm_scalar(left, left_norm, right, dim);
 }
 
 KernelCapabilities detect_capabilities() noexcept {

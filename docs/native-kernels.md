@@ -35,6 +35,12 @@ SIMD reductions can differ slightly from scalar reduction order. Tests and
 benchmarks should treat dispatch results within `1e-4` absolute error of the
 scalar path as equivalent for normal benchmark vectors.
 
+The AVX2 path is compiled only for `distance_avx2.cpp` and uses FMA plus four
+independent accumulators in the main loop. That keeps the rest of the binary
+portable while reducing the add/multiply dependency chain inside the hot
+kernel. Runtime dispatch checks both OS vector-state support and the required
+CPU feature bits before calling that code.
+
 ## ABI And Python Binding Strategy
 
 The C++ namespace API in `vecadvisor/distance.hpp` is for native callers. The
@@ -58,6 +64,8 @@ The initial binding should cross the native boundary once per query chunk using
 `vecadvisor_distance_compute_many`; it should not call
 `vecadvisor_distance_compute` once per row. That keeps Python overhead out of
 the hot loop and preserves the SIMD speedup shown in the benchmark artifact.
+For cosine batches, the C ABI caches the query norm once per
+`vecadvisor_distance_compute_many` call and reuses it for every corpus row.
 
 The C ABI is versioned conservatively by header shape: append new enum values
 and functions, but do not reorder existing enum values or fields in
@@ -74,14 +82,18 @@ CMake builds both targets:
 Install a C++17 compiler and CMake, then run:
 
 ```bash
-cmake -S native -B native/build -DCMAKE_BUILD_TYPE=Release
+cmake -S native -B native/build
 cmake --build native/build --config Release --parallel
 ctest --test-dir native/build --output-on-failure
 ```
 
+Single-config generators default to `Release` when `CMAKE_BUILD_TYPE` is not
+provided. Passing `-DCMAKE_BUILD_TYPE=Release` remains fine and is what CI uses
+for explicitness.
+
 AVX2 is enabled automatically on x86/x86_64 when the compiler supports the
-required flag. Runtime dispatch still checks CPU support before calling AVX2
-kernels.
+required AVX2 and FMA flags. Runtime dispatch still checks CPU support before
+calling AVX2/FMA kernels.
 
 To force scalar-only kernels:
 
@@ -153,3 +165,18 @@ python tools/native_distance_compare.py \
 - Do not change the Python package build until native ABI and CI are stable.
 - Prefer reproducible native benchmarks before claiming speedups in README or
   launch material.
+
+## Roadmap
+
+The native layer is not complete yet. The next credibility items are:
+
+- Benchmark against a mature SIMD library such as SimSIMD, not only the local
+  scalar fallback.
+- Add an ARM NEON path so Apple Silicon and ARM server users do not see only
+  the scalar implementation.
+- Add AVX-512 after NEON if the benchmark evidence justifies the extra code.
+- Add native top-k selection for fast blocked exact ground truth.
+- Add fp16 and int8 kernels once the float32 path has stable bindings and
+  external baselines.
+- Build MVP2 Part B as the Rust/pgrx extension layer; the current repository
+  contains MVP2 Part A kernels only.

@@ -19,10 +19,12 @@ void assert_near(float actual, float expected, float tolerance, const char* labe
 
 int main() {
   using vecadvisor::native::cosine_distance;
+  using vecadvisor::native::cosine_distance_with_left_norm;
   using vecadvisor::native::cosine_distance_scalar;
   using vecadvisor::native::detect_capabilities;
   using vecadvisor::native::inner_product;
   using vecadvisor::native::inner_product_scalar;
+  using vecadvisor::native::l2_norm;
   using vecadvisor::native::l2_squared;
   using vecadvisor::native::l2_squared_scalar;
 
@@ -67,6 +69,16 @@ int main() {
       cosine_distance_scalar(long_left.data(), long_right.data(), long_left.size()),
       1.0e-4F,
       "dispatch cosine");
+  assert_near(l2_norm(left.data(), left.size()), std::sqrt(14.0F), 1.0e-6F, "dispatch norm");
+  assert_near(
+      cosine_distance_with_left_norm(
+          long_left.data(),
+          l2_norm(long_left.data(), long_left.size()),
+          long_right.data(),
+          long_left.size()),
+      cosine_distance(long_left.data(), long_right.data(), long_left.size()),
+      1.0e-4F,
+      "cached-norm cosine");
 
   float c_distance = -1.0F;
   if (vecadvisor_distance_compute(
@@ -94,6 +106,20 @@ int main() {
   }
   assert_near(many_out[0], 8.0F, 1.0e-6F, "C ABI batch l2 row 0");
   assert_near(many_out[1], 13.0F, 1.0e-6F, "C ABI batch l2 row 1");
+
+  const std::vector<float> cosine_corpus{0.0F, 1.0F, 0.0F, 1.0F, 0.0F, 0.0F};
+  if (vecadvisor_distance_compute_many(
+          VECADVISOR_DISTANCE_COSINE,
+          unit_x.data(),
+          cosine_corpus.data(),
+          2,
+          unit_x.size(),
+          many_out.data()) != VECADVISOR_DISTANCE_OK) {
+    std::cerr << "C ABI batch cosine call failed\n";
+    return 1;
+  }
+  assert_near(many_out[0], 1.0F, 1.0e-6F, "C ABI batch cosine row 0");
+  assert_near(many_out[1], 0.0F, 1.0e-6F, "C ABI batch cosine row 1");
 
   if (vecadvisor_distance_compute(
           static_cast<vecadvisor_distance_metric>(999),

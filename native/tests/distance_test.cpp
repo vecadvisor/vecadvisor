@@ -1,6 +1,7 @@
 #include "vecadvisor/distance.hpp"
 #include "vecadvisor/distance_c.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
@@ -13,6 +14,31 @@ void assert_near(float actual, float expected, float tolerance, const char* labe
     std::cerr << label << " expected " << expected << " but got " << actual << '\n';
     std::exit(1);
   }
+}
+
+void assert_equal_size(std::size_t actual, std::size_t expected, const char* label) {
+  if (actual != expected) {
+    std::cerr << label << " expected " << expected << " but got " << actual << '\n';
+    std::exit(1);
+  }
+}
+
+struct ExpectedCandidate {
+  std::size_t index;
+  float distance;
+};
+
+bool expected_better(
+    vecadvisor_distance_metric metric,
+    const ExpectedCandidate& left,
+    const ExpectedCandidate& right) {
+  if (left.distance == right.distance) {
+    return left.index < right.index;
+  }
+  if (metric == VECADVISOR_DISTANCE_INNER_PRODUCT) {
+    return left.distance > right.distance;
+  }
+  return left.distance < right.distance;
 }
 
 }  // namespace
@@ -121,6 +147,122 @@ int main() {
   assert_near(many_out[0], 1.0F, 1.0e-6F, "C ABI batch cosine row 0");
   assert_near(many_out[1], 0.0F, 1.0e-6F, "C ABI batch cosine row 1");
 
+  std::vector<std::size_t> topk_indices(5);
+  std::vector<float> topk_distances(5);
+  std::size_t topk_count = 0;
+
+  const std::vector<float> l2_query{0.0F, 0.0F};
+  const std::vector<float> l2_corpus{
+      2.0F,
+      0.0F,
+      1.0F,
+      0.0F,
+      1.0F,
+      0.0F,
+      0.0F,
+      3.0F,
+      0.0F,
+      0.0F,
+  };
+  if (vecadvisor_distance_topk(
+          VECADVISOR_DISTANCE_L2_SQUARED,
+          l2_query.data(),
+          l2_corpus.data(),
+          5,
+          2,
+          3,
+          topk_indices.data(),
+          topk_distances.data(),
+          &topk_count) != VECADVISOR_DISTANCE_OK) {
+    std::cerr << "C ABI top-k l2 call failed\n";
+    return 1;
+  }
+  assert_equal_size(topk_count, 3, "C ABI top-k l2 count");
+  assert_equal_size(topk_indices[0], 4, "C ABI top-k l2 index 0");
+  assert_equal_size(topk_indices[1], 1, "C ABI top-k l2 index 1");
+  assert_equal_size(topk_indices[2], 2, "C ABI top-k l2 index 2");
+  assert_near(topk_distances[0], 0.0F, 1.0e-6F, "C ABI top-k l2 distance 0");
+  assert_near(topk_distances[1], 1.0F, 1.0e-6F, "C ABI top-k l2 distance 1");
+  assert_near(topk_distances[2], 1.0F, 1.0e-6F, "C ABI top-k l2 distance 2");
+
+  const std::vector<float> ip_query{1.0F, 0.0F};
+  const std::vector<float> ip_corpus{
+      1.0F,
+      0.0F,
+      3.0F,
+      0.0F,
+      3.0F,
+      0.0F,
+      -1.0F,
+      0.0F,
+  };
+  if (vecadvisor_distance_topk(
+          VECADVISOR_DISTANCE_INNER_PRODUCT,
+          ip_query.data(),
+          ip_corpus.data(),
+          4,
+          2,
+          2,
+          topk_indices.data(),
+          topk_distances.data(),
+          &topk_count) != VECADVISOR_DISTANCE_OK) {
+    std::cerr << "C ABI top-k inner product call failed\n";
+    return 1;
+  }
+  assert_equal_size(topk_count, 2, "C ABI top-k ip count");
+  assert_equal_size(topk_indices[0], 1, "C ABI top-k ip index 0");
+  assert_equal_size(topk_indices[1], 2, "C ABI top-k ip index 1");
+  assert_near(topk_distances[0], 3.0F, 1.0e-6F, "C ABI top-k ip distance 0");
+  assert_near(topk_distances[1], 3.0F, 1.0e-6F, "C ABI top-k ip distance 1");
+
+  const std::vector<float> cosine_topk_corpus{
+      0.0F,
+      1.0F,
+      0.0F,
+      1.0F,
+      0.0F,
+      0.0F,
+      -1.0F,
+      0.0F,
+      0.0F,
+      1.0F,
+      0.0F,
+      0.0F,
+  };
+  if (vecadvisor_distance_topk(
+          VECADVISOR_DISTANCE_COSINE,
+          unit_x.data(),
+          cosine_topk_corpus.data(),
+          4,
+          unit_x.size(),
+          2,
+          topk_indices.data(),
+          topk_distances.data(),
+          &topk_count) != VECADVISOR_DISTANCE_OK) {
+    std::cerr << "C ABI top-k cosine call failed\n";
+    return 1;
+  }
+  assert_equal_size(topk_count, 2, "C ABI top-k cosine count");
+  assert_equal_size(topk_indices[0], 1, "C ABI top-k cosine index 0");
+  assert_equal_size(topk_indices[1], 3, "C ABI top-k cosine index 1");
+  assert_near(topk_distances[0], 0.0F, 1.0e-6F, "C ABI top-k cosine distance 0");
+  assert_near(topk_distances[1], 0.0F, 1.0e-6F, "C ABI top-k cosine distance 1");
+
+  if (vecadvisor_distance_topk(
+          VECADVISOR_DISTANCE_L2_SQUARED,
+          l2_query.data(),
+          l2_corpus.data(),
+          5,
+          2,
+          9,
+          topk_indices.data(),
+          topk_distances.data(),
+          &topk_count) != VECADVISOR_DISTANCE_OK) {
+    std::cerr << "C ABI top-k k>rows call failed\n";
+    return 1;
+  }
+  assert_equal_size(topk_count, 5, "C ABI top-k k>rows count");
+
   if (vecadvisor_distance_compute(
           static_cast<vecadvisor_distance_metric>(999),
           left.data(),
@@ -139,6 +281,96 @@ int main() {
           &c_distance) != VECADVISOR_DISTANCE_INVALID_ARGUMENT) {
     std::cerr << "C ABI null pointer should fail\n";
     return 1;
+  }
+
+  if (vecadvisor_distance_topk(
+          VECADVISOR_DISTANCE_L2_SQUARED,
+          nullptr,
+          l2_corpus.data(),
+          5,
+          2,
+          3,
+          topk_indices.data(),
+          topk_distances.data(),
+          &topk_count) != VECADVISOR_DISTANCE_INVALID_ARGUMENT) {
+    std::cerr << "C ABI top-k null pointer should fail\n";
+    return 1;
+  }
+
+  if (vecadvisor_distance_topk(
+          static_cast<vecadvisor_distance_metric>(999),
+          l2_query.data(),
+          l2_corpus.data(),
+          5,
+          2,
+          3,
+          topk_indices.data(),
+          topk_distances.data(),
+          &topk_count) != VECADVISOR_DISTANCE_UNSUPPORTED_METRIC) {
+    std::cerr << "C ABI top-k unsupported metric should fail\n";
+    return 1;
+  }
+
+  const std::size_t reference_rows = 11;
+  const std::size_t reference_dim = 31;
+  const std::size_t reference_k = 4;
+  std::vector<float> reference_query(reference_dim);
+  std::vector<float> reference_corpus(reference_rows * reference_dim);
+  for (std::size_t dim = 0; dim < reference_dim; ++dim) {
+    reference_query[dim] = static_cast<float>(static_cast<int>(dim % 7) - 3) * 0.125F;
+  }
+  for (std::size_t row = 0; row < reference_rows; ++row) {
+    for (std::size_t dim = 0; dim < reference_dim; ++dim) {
+      reference_corpus[row * reference_dim + dim] =
+          static_cast<float>(((row + 1) * (dim + 3)) % 17) * 0.05F;
+    }
+  }
+
+  for (const auto metric :
+       {VECADVISOR_DISTANCE_L2_SQUARED,
+        VECADVISOR_DISTANCE_INNER_PRODUCT,
+        VECADVISOR_DISTANCE_COSINE}) {
+    std::vector<ExpectedCandidate> expected;
+    expected.reserve(reference_rows);
+    for (std::size_t row = 0; row < reference_rows; ++row) {
+      float distance = 0.0F;
+      if (vecadvisor_distance_compute(
+              metric,
+              reference_query.data(),
+              reference_corpus.data() + row * reference_dim,
+              reference_dim,
+              &distance) != VECADVISOR_DISTANCE_OK) {
+        std::cerr << "C ABI reference distance call failed\n";
+        return 1;
+      }
+      expected.push_back(ExpectedCandidate{row, distance});
+    }
+    std::sort(expected.begin(), expected.end(), [metric](const auto& left, const auto& right) {
+      return expected_better(metric, left, right);
+    });
+
+    if (vecadvisor_distance_topk(
+            metric,
+            reference_query.data(),
+            reference_corpus.data(),
+            reference_rows,
+            reference_dim,
+            reference_k,
+            topk_indices.data(),
+            topk_distances.data(),
+            &topk_count) != VECADVISOR_DISTANCE_OK) {
+      std::cerr << "C ABI reference top-k call failed\n";
+      return 1;
+    }
+    assert_equal_size(topk_count, reference_k, "C ABI reference top-k count");
+    for (std::size_t index = 0; index < reference_k; ++index) {
+      assert_equal_size(topk_indices[index], expected[index].index, "C ABI reference top-k index");
+      assert_near(
+          topk_distances[index],
+          expected[index].distance,
+          1.0e-4F,
+          "C ABI reference top-k distance");
+    }
   }
 
   const auto capabilities = detect_capabilities();

@@ -57,6 +57,17 @@ VECADVISOR_NATIVE_EXPORT vecadvisor_distance_status vecadvisor_distance_compute_
     size_t dim,
     float* out);
 
+VECADVISOR_NATIVE_EXPORT vecadvisor_distance_status vecadvisor_distance_topk(
+    vecadvisor_distance_metric metric,
+    const float* query,
+    const float* corpus,
+    size_t rows,
+    size_t dim,
+    size_t k,
+    size_t* out_indices,
+    float* out_distances,
+    size_t* out_count);
+
 #ifdef __cplusplus
 }
 #endif

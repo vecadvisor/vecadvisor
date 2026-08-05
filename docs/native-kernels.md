@@ -50,6 +50,9 @@ stable boundary for language bindings is the C ABI in
 - `vecadvisor_distance_compute` for one distance between two vectors;
 - `vecadvisor_distance_compute_many` for one query vector against a row-major
   corpus matrix;
+- `vecadvisor_distance_topk` for one query vector against a row-major corpus
+  matrix, returning the best row offsets and metric values without
+  materializing all distances;
 - `vecadvisor_distance_get_capabilities` for runtime dispatch visibility;
 - status codes instead of exceptions.
 
@@ -66,6 +69,12 @@ The initial binding should cross the native boundary once per query chunk using
 the hot loop and preserves the SIMD speedup shown in the benchmark artifact.
 For cosine batches, the C ABI caches the query norm once per
 `vecadvisor_distance_compute_many` call and reuses it for every corpus row.
+`vecadvisor_distance_topk` uses the same metric kernels, keeps only `k`
+candidates plus the current input block in memory, and returns row offsets
+relative to the supplied block. For L2 and cosine, smaller distances rank
+first. For inner product, larger scores rank first and the returned
+`out_distances` values are the raw inner products. Ties are stable by smaller
+row offset.
 
 The C ABI is versioned conservatively by header shape: append new enum values
 and functions, but do not reorder existing enum values or fields in
@@ -143,7 +152,7 @@ artifact runs this optional baseline so the public report compares VecAdvisor
 AVX2 dispatch against both the local scalar fallback and an external SIMD
 library. hnswlib is deferred for now because its primary value is ANN index
 behavior rather than a direct drop-in distance-kernel baseline; it fits better
-with the planned native top-k / exact-ground-truth work.
+with future native exact-ground-truth and ANN comparison work.
 
 The wrapper builds the native target by default, runs the benchmark, validates
 scalar and dispatch checksums against deterministic NumPy data, and writes:
@@ -180,6 +189,8 @@ python tools/native_distance_compare.py \
 ## Design Rules
 
 - Keep exact search blocked; never materialize an `N x Q` distance matrix.
+- Use bounded top-k selection for exact ground truth instead of sorting a full
+  corpus distance vector when only `k` neighbors are needed.
 - Keep scalar kernels as the correctness baseline for every SIMD path.
 - Add SIMD by metric and instruction set behind runtime dispatch.
 - Do not change the Python package build until native ABI and CI are stable.
@@ -190,12 +201,11 @@ python tools/native_distance_compare.py \
 
 The native layer is not complete yet. The next credibility items are:
 
-- Benchmark against a mature SIMD library such as SimSIMD, not only the local
-  scalar fallback.
+- Wire `vecadvisor_distance_topk` into the Python ground-truth path behind an
+  optional native-library loader.
 - Add an ARM NEON path so Apple Silicon and ARM server users do not see only
   the scalar implementation.
 - Add AVX-512 after NEON if the benchmark evidence justifies the extra code.
-- Add native top-k selection for fast blocked exact ground truth.
 - Add fp16 and int8 kernels once the float32 path has stable bindings and
   external baselines.
 - Build MVP2 Part B as the Rust/pgrx extension layer; the current repository

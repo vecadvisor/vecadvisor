@@ -60,3 +60,23 @@ jobs:
 
       - name: Build package
         run: python -m build
+
+  rust-extension:
+    name: Rust extension scaffold
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Rust
+        run: |
+          rustup default stable
+          rustc --version
+          cargo --version
+
+      - name: Check Rust formatting
+        run: cargo fmt --manifest-path extension/vecadvisor/Cargo.toml --check
+
+      - name: Test Rust metadata scaffold
+        run: cargo test --manifest-path extension/vecadvisor/Cargo.toml --no-default-features

@@ -1,0 +1,27 @@
+[package]
+name = "vecadvisor_pgrx"
+version = "0.1.0-alpha.4"
+edition = "2024"
+rust-version = "1.96"
+license = "Apache-2.0"
+publish = false
+description = "PostgreSQL extension scaffold for VecAdvisor"
+
+[lib]
+name = "vecadvisor"
+crate-type = ["cdylib", "lib"]
+
+[features]
+default = ["pg17"]
+pg13 = ["pgrx", "pgrx/pg13"]
+pg14 = ["pgrx", "pgrx/pg14"]
+pg15 = ["pgrx", "pgrx/pg15"]
+pg16 = ["pgrx", "pgrx/pg16"]
+pg17 = ["pgrx", "pgrx/pg17"]
+pg18 = ["pgrx", "pgrx/pg18"]
+pg19 = ["pgrx", "pgrx/pg19"]
+pg_test = []
+
+[dependencies]
+pgrx = { version = "=0.19.2", optional = true }
+serde_json = "1.0"

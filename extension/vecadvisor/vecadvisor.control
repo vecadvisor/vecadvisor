@@ -1,0 +1,5 @@
+comment = 'VecAdvisor SQL-callable advisor metadata scaffold'
+default_version = '0.1.0-alpha.4'
+module_pathname = '$libdir/vecadvisor'
+relocatable = true
+trusted = false

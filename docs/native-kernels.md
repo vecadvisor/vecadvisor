@@ -208,5 +208,5 @@ The native layer is not complete yet. The next credibility items are:
 - Add AVX-512 after NEON if the benchmark evidence justifies the extra code.
 - Add fp16 and int8 kernels once the float32 path has stable bindings and
   external baselines.
-- Build MVP2 Part B as the Rust/pgrx extension layer; the current repository
-  contains MVP2 Part A kernels only.
+- Expand the Rust/pgrx extension scaffold into read-only SQL advisor functions
+  once Python parity fixtures are in place.

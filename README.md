@@ -51,6 +51,7 @@ pgvector, but it is not affiliated with the official pgvector project.
 - [Predicate support](https://github.com/vecadvisor/vecadvisor/blob/main/docs/predicates.md)
 - [Workload collector](https://github.com/vecadvisor/vecadvisor/blob/main/docs/workload-collector.md)
 - [Native kernels](https://github.com/vecadvisor/vecadvisor/blob/main/docs/native-kernels.md)
+- [Rust/pgrx extension](https://github.com/vecadvisor/vecadvisor/blob/main/docs/pgrx-extension.md)
 - [Benchmark artifacts](https://github.com/vecadvisor/vecadvisor/blob/main/docs/benchmarks/README.md)
 - [SIFT1M scale benchmark recipe](https://github.com/vecadvisor/vecadvisor/blob/main/docs/benchmarks/scale-benchmark.md)
 - [Release checklist](https://github.com/vecadvisor/vecadvisor/blob/main/docs/release.md)

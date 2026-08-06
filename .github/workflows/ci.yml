@@ -13,6 +13,7 @@ jobs:
 
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         python-version: ["3.11", "3.12"]
 
@@ -64,6 +65,7 @@ jobs:
   rust-extension:
     name: Rust extension scaffold
     runs-on: ubuntu-latest
+    needs: test
 
     steps:
       - name: Check out repository

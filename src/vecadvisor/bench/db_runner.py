@@ -293,6 +293,7 @@ def run_postgres_synthetic_benchmark(
             "candidate_count": truth.candidate_count,
             "block_rows": truth.block_rows,
             "blocks_scanned": truth.blocks_scanned,
+            "native_used": truth.native_used,
             "first_query_indices": [
                 int(index) for index in truth.indices[0].tolist() if int(index) >= 0
             ],

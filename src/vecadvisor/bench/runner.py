@@ -170,6 +170,7 @@ def run_synthetic_benchmark(
             "candidate_count": truth.candidate_count,
             "block_rows": truth.block_rows,
             "blocks_scanned": truth.blocks_scanned,
+            "native_used": truth.native_used,
             "first_query_indices": [
                 int(index) for index in truth.indices[0].tolist() if int(index) >= 0
             ],
@@ -260,6 +261,7 @@ def _compute_ground_truth(
     distances = np.full((queries.n_queries, k), np.inf, dtype="float64")
     latencies_ms: list[float] = []
     first: ExactTopKResult | None = None
+    native_used = False
     for query_index in range(queries.n_queries):
         started = time.perf_counter()
         result = exact_topk(
@@ -273,6 +275,7 @@ def _compute_ground_truth(
         latencies_ms.append((time.perf_counter() - started) * 1000.0)
         indices[query_index] = result.indices[0]
         distances[query_index] = result.distances[0]
+        native_used = native_used or result.native_used
         if first is None:
             first = result
     assert first is not None
@@ -285,6 +288,7 @@ def _compute_ground_truth(
             candidate_count=first.candidate_count,
             block_rows=first.block_rows,
             blocks_scanned=first.blocks_scanned,
+            native_used=native_used,
         ),
         tuple(latencies_ms),
     )

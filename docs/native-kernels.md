@@ -8,10 +8,12 @@ optional AVX2 implementations for:
 - inner product,
 - cosine distance.
 
-The Python package still uses the existing NumPy ground-truth path. Native code
-is not wired into PyPI packaging yet. This keeps the published CLI stable while
-the native kernel ABI, benchmark harness, and cross-platform build discipline
-settle.
+The Python package does not bundle the native shared library yet. When
+`VECADVISOR_NATIVE_DISTANCE_LIB` points at a locally built shared library,
+Python exact ground-truth can use the native bounded top-k path. When the
+library is absent or rejects an input, VecAdvisor falls back to the existing
+NumPy implementation. This keeps the published CLI stable while the native
+kernel ABI, benchmark harness, and cross-platform build discipline settle.
 
 ## Data Contract
 
@@ -56,19 +58,17 @@ stable boundary for language bindings is the C ABI in
 - `vecadvisor_distance_get_capabilities` for runtime dispatch visibility;
 - status codes instead of exceptions.
 
-Python integration should bind to the C ABI, not to C++ symbols. The planned
-adapter is an optional Python module that loads the shared library and exposes
-NumPy-array entry points for exact ground truth and candidate rescoring. The
-advisor, cost model, SQL parsing, and recommendation logic remain pure Python.
-If the shared library is missing or rejects an input, Python falls back to the
-existing NumPy implementation.
+Python integration binds to the C ABI, not to C++ symbols. The optional
+`ctypes` adapter loads the shared library and exposes NumPy-array entry points
+for exact ground truth. The advisor, cost model, SQL parsing, and
+recommendation logic remain pure Python.
 
-The initial binding should cross the native boundary once per query chunk using
-`vecadvisor_distance_compute_many`; it should not call
+The Python ground-truth path crosses the native boundary once per query block
+using `vecadvisor_distance_topk`; it does not call
 `vecadvisor_distance_compute` once per row. That keeps Python overhead out of
 the hot loop and preserves the SIMD speedup shown in the benchmark artifact.
-For cosine batches, the C ABI caches the query norm once per
-`vecadvisor_distance_compute_many` call and reuses it for every corpus row.
+For cosine batches, `vecadvisor_distance_compute_many` caches the query norm
+once per call and reuses it for every corpus row.
 `vecadvisor_distance_topk` uses the same metric kernels, keeps only `k`
 candidates plus the current input block in memory, and returns row offsets
 relative to the supplied block. For L2 and cosine, smaller distances rank
@@ -109,6 +109,23 @@ To force scalar-only kernels:
 ```bash
 cmake -S native -B native/build -DVECADVISOR_NATIVE_ENABLE_AVX2=OFF
 ```
+
+## Use From Python
+
+After building the shared library, point the Python process at it:
+
+```powershell
+$env:VECADVISOR_NATIVE_DISTANCE_LIB = "C:\path\to\pgVector\native\build\Release\vecadvisor_distance.dll"
+```
+
+```bash
+export VECADVISOR_NATIVE_DISTANCE_LIB="$PWD/native/build/libvecadvisor_distance.so"
+```
+
+On macOS, use the corresponding `.dylib` path. Benchmark JSON includes
+`ground_truth.native_used` so runs can distinguish native-backed exact
+ground-truth from the NumPy fallback. The library is optional; no runtime
+failure should occur simply because it is not installed.
 
 ## Benchmark
 
@@ -193,7 +210,8 @@ python tools/native_distance_compare.py \
   corpus distance vector when only `k` neighbors are needed.
 - Keep scalar kernels as the correctness baseline for every SIMD path.
 - Add SIMD by metric and instruction set behind runtime dispatch.
-- Do not change the Python package build until native ABI and CI are stable.
+- Do not bundle native binaries in the Python package until native ABI and CI
+  are stable across platforms.
 - Prefer reproducible native benchmarks before claiming speedups in README or
   launch material.
 
@@ -201,8 +219,8 @@ python tools/native_distance_compare.py \
 
 The native layer is not complete yet. The next credibility items are:
 
-- Wire `vecadvisor_distance_topk` into the Python ground-truth path behind an
-  optional native-library loader.
+- Package the shared native library in platform wheels once the ABI and CI
+  matrix are stable.
 - Add an ARM NEON path so Apple Silicon and ARM server users do not see only
   the scalar implementation.
 - Add AVX-512 after NEON if the benchmark evidence justifies the extra code.

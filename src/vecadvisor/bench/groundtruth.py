@@ -5,6 +5,13 @@ import math
 from dataclasses import dataclass
 from typing import Any
 
+from vecadvisor.native_distance import (
+    NativeDistanceError,
+    NativeDistanceLibrary,
+    NativeTopKResult,
+    load_default_native_distance_library,
+)
+
 MiB = 1024 * 1024
 DEFAULT_DISTANCE_MATRIX_BUDGET_BYTES = 256 * MiB
 SUPPORTED_METRICS = {"l2", "ip", "cosine"}
@@ -19,6 +26,7 @@ class ExactTopKResult:
     candidate_count: int
     block_rows: int
     blocks_scanned: int
+    native_used: bool = False
 
 
 @dataclass(frozen=True)
@@ -37,6 +45,7 @@ def exact_topk(
     filter_mask: Any | None = None,
     block_rows: int | None = None,
     max_distance_matrix_bytes: int = DEFAULT_DISTANCE_MATRIX_BUDGET_BYTES,
+    use_native: bool = True,
 ) -> ExactTopKResult:
     """Compute filtered exact kNN without materializing an N x Q distance matrix."""
 
@@ -67,6 +76,8 @@ def exact_topk(
     out_indices = np.full((int(queries.shape[0]), k), -1, dtype="int64")
     out_distances = np.full((int(queries.shape[0]), k), np.inf, dtype="float64")
     blocks_scanned = math.ceil(int(base.shape[0]) / effective_block_rows)
+    native_library = _load_native_distance_library() if use_native else None
+    native_used = False
 
     for query_index in range(int(queries.shape[0])):
         best_scores = np.full(k, np.inf, dtype="float64")
@@ -82,13 +93,20 @@ def exact_topk(
                     continue
                 block = block[local_mask]
                 block_indices = block_indices[local_mask]
-            scores = _distance_scores(np, block, query, metric=metric)
+            scores, candidate_indices, used_native_for_block = _block_topk_scores(
+                np,
+                block,
+                block_indices,
+                query,
+                metric=metric,
+                k=k,
+                native_library=native_library,
+            )
+            native_used = native_used or used_native_for_block
             if int(scores.shape[0]) == 0:
                 continue
-            take = min(k, int(scores.shape[0]))
-            local_top = _topk_unsorted(np, scores, take)
-            merged_scores = np.concatenate((best_scores, scores[local_top]))
-            merged_indices = np.concatenate((best_indices, block_indices[local_top]))
+            merged_scores = np.concatenate((best_scores, scores))
+            merged_indices = np.concatenate((best_indices, candidate_indices))
             take_merged = min(k, int(merged_scores.shape[0]))
             merged_top = _topk_unsorted(np, merged_scores, take_merged)
             order = np.argsort(merged_scores[merged_top], kind="stable")
@@ -109,6 +127,7 @@ def exact_topk(
         candidate_count=candidate_count,
         block_rows=effective_block_rows,
         blocks_scanned=blocks_scanned,
+        native_used=native_used,
     )
 
 
@@ -176,6 +195,44 @@ def _topk_unsorted(np: Any, scores: Any, k: int) -> Any:
     return np.argpartition(scores, k - 1)[:k]
 
 
+def _block_topk_scores(
+    np: Any,
+    block: Any,
+    block_indices: Any,
+    query: Any,
+    *,
+    metric: str,
+    k: int,
+    native_library: NativeDistanceLibrary | None,
+) -> tuple[Any, Any, bool]:
+    if int(block.shape[0]) == 0:
+        return (
+            np.asarray([], dtype="float64"),
+            np.asarray([], dtype="int64"),
+            False,
+        )
+    if native_library is not None:
+        try:
+            native = native_library.topk(query, block, k=min(k, int(block.shape[0])), metric=metric)
+            scores = _native_distances_to_scores(np, native, metric=metric)
+            indices = block_indices[native.indices]
+            return scores, indices.astype("int64", copy=False), True
+        except (NativeDistanceError, OSError, ValueError):
+            pass
+
+    scores = _distance_scores(np, block, query, metric=metric)
+    take = min(k, int(scores.shape[0]))
+    local_top = _topk_unsorted(np, scores, take)
+    return scores[local_top], block_indices[local_top], False
+
+
+def _native_distances_to_scores(np: Any, native: NativeTopKResult, *, metric: str) -> Any:
+    distances = np.asarray(native.distances, dtype="float64")
+    if metric == "ip":
+        return -distances
+    return distances
+
+
 def _distance_scores(np: Any, block: Any, query: Any, *, metric: str) -> Any:
     if metric == "l2":
         delta = block - query
@@ -218,3 +275,7 @@ def _coerce_filter_mask(np: Any, filter_mask: Any | None, n_rows: int) -> Any | 
 
 def _numpy() -> Any:
     return importlib.import_module("numpy")
+
+
+def _load_native_distance_library() -> NativeDistanceLibrary | None:
+    return load_default_native_distance_library()

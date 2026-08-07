@@ -464,7 +464,9 @@ Important JSON fields:
 - Calibration constants are workload and hardware dependent.
 - Predicate parsing intentionally supports a
   [restricted safe subset of filters](https://github.com/vecadvisor/vecadvisor/blob/main/docs/predicates.md).
-- 10M-scale exact ground truth is deferred to the planned C++ SIMD kernel work.
+- Native exact top-k ground truth is available when a locally built shared
+  library is configured; prebuilt native wheels are deferred until the ABI and
+  CI matrix are stable.
 - Postgres integration tests require a reachable PostgreSQL database with
   pgvector installed. Tests skip those cases if the database is unavailable.
 
@@ -513,6 +515,11 @@ scalar-only fallback build and the optional SimSIMD external baseline:
 The native C ABI also includes a bounded top-k helper for exact ground-truth
 search over row-major `float32` blocks without materializing an `N x Q`
 distance matrix.
+
+Python benchmark ground-truth can use that helper when
+`VECADVISOR_NATIVE_DISTANCE_LIB` points at the built shared library. Runs record
+`ground_truth.native_used`; if the library is missing, VecAdvisor falls back to
+the NumPy path.
 
 ## Prior Art And Clean-Room Notes
 

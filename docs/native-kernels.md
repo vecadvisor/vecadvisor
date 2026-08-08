@@ -127,6 +127,11 @@ On macOS, use the corresponding `.dylib` path. Benchmark JSON includes
 ground-truth from the NumPy fallback. The library is optional; no runtime
 failure should occur simply because it is not installed.
 
+Native CI builds the shared library and runs
+`tests/test_native_distance_integration.py` with
+`VECADVISOR_NATIVE_DISTANCE_LIB` set, so the C ABI, Python `ctypes` wrapper,
+and blocked exact ground-truth path are validated together.
+
 ## Benchmark
 
 The native benchmark executable is built as `vecadvisor_distance_bench` when

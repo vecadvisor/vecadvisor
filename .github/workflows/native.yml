@@ -43,8 +43,13 @@ jobs:
       - name: Test scalar fallback target
         run: ctest --test-dir native/build-scalar --output-on-failure
 
-      - name: Install Python benchmark dependencies
-        run: python -m pip install numpy simsimd
+      - name: Install Python native dependencies
+        run: python -m pip install -e ".[dev]" simsimd
+
+      - name: Smoke-test Python native wrapper
+        env:
+          VECADVISOR_NATIVE_DISTANCE_LIB: ${{ github.workspace }}/native/build-avx2/libvecadvisor_distance.so
+        run: python -m pytest tests/test_native_distance_integration.py -q
 
       - name: Run AVX2-capable benchmark
         run: >

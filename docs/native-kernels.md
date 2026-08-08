@@ -110,6 +110,17 @@ To force scalar-only kernels:
 cmake -S native -B native/build -DVECADVISOR_NATIVE_ENABLE_AVX2=OFF
 ```
 
+On Windows, install CMake and Visual Studio Build Tools with the C++ workload,
+then run the helper from PowerShell:
+
+```powershell
+.\tools\windows_native_build.ps1
+```
+
+The helper locates `vcvars64.bat`, configures a Visual Studio x64 build in
+`native/build-msvc`, runs native CTest, and then runs the Python native-wrapper
+smoke test against the produced `vecadvisor_distance.dll`.
+
 ## Use From Python
 
 After building the shared library, point the Python process at it:

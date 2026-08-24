@@ -49,6 +49,8 @@ def test_run_synthetic_benchmark_reports_strategy_metrics() -> None:
     assert set(metrics_by_strategy) == {STRATEGY_EXACT, STRATEGY_POSTFILTER, STRATEGY_ITERATIVE}
     assert report.dataset["query_policy"] == "filter_cold"
     assert report.ground_truth["block_rows"] == 32
+    assert report.ground_truth["native_used"] is False
+    assert report.ground_truth["native_capabilities"] is None
     assert metrics_by_strategy[STRATEGY_EXACT].recall_at_k == pytest.approx(1.0)
     assert 0.0 <= metrics_by_strategy[STRATEGY_POSTFILTER].recall_at_k <= 1.0
     assert (

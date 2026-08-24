@@ -454,6 +454,10 @@ Important JSON fields:
 - `local_selectivity_cache`: cache hit/store metadata when enabled.
 - `recommendation.decision`: winner, runner-up, viability, confidence, and why.
 - `recommendation.ranked`: full candidate plan and estimate details.
+- `ground_truth.native_used`: whether benchmark exact ground truth used the
+  optional native C ABI.
+- `ground_truth.native_capabilities`: native library source and runtime kernel
+  dispatch details when native ground truth was used.
 
 ## Current Limitations
 
@@ -518,8 +522,9 @@ distance matrix.
 
 Python benchmark ground-truth can use that helper when
 `VECADVISOR_NATIVE_DISTANCE_LIB` points at the built shared library. Runs record
-`ground_truth.native_used`; if the library is missing, VecAdvisor falls back to
-the NumPy path.
+`ground_truth.native_used`, `ground_truth.native_library_source`, and
+`ground_truth.native_capabilities`; if the library is missing, VecAdvisor falls
+back to the NumPy path.
 
 ## Prior Art And Clean-Room Notes
 

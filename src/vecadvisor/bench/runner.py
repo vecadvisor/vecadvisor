@@ -164,17 +164,7 @@ def run_synthetic_benchmark(
             "dataset_seed": dataset.seed,
             "query_seed": queries.seed,
         },
-        ground_truth={
-            "metric": truth.metric,
-            "k": truth.k,
-            "candidate_count": truth.candidate_count,
-            "block_rows": truth.block_rows,
-            "blocks_scanned": truth.blocks_scanned,
-            "native_used": truth.native_used,
-            "first_query_indices": [
-                int(index) for index in truth.indices[0].tolist() if int(index) >= 0
-            ],
-        },
+        ground_truth=ground_truth_to_json(truth),
         strategies=tuple(strategy_metrics),
         elapsed_ms=elapsed_ms,
         notes=(
@@ -262,6 +252,8 @@ def _compute_ground_truth(
     latencies_ms: list[float] = []
     first: ExactTopKResult | None = None
     native_used = False
+    native_library_source: str | None = None
+    native_capabilities = None
     for query_index in range(queries.n_queries):
         started = time.perf_counter()
         result = exact_topk(
@@ -276,6 +268,9 @@ def _compute_ground_truth(
         indices[query_index] = result.indices[0]
         distances[query_index] = result.distances[0]
         native_used = native_used or result.native_used
+        if result.native_used and native_library_source is None:
+            native_library_source = result.native_library_source
+            native_capabilities = result.native_capabilities
         if first is None:
             first = result
     assert first is not None
@@ -289,9 +284,31 @@ def _compute_ground_truth(
             block_rows=first.block_rows,
             blocks_scanned=first.blocks_scanned,
             native_used=native_used,
+            native_library_source=native_library_source,
+            native_capabilities=native_capabilities,
         ),
         tuple(latencies_ms),
     )
+
+
+def ground_truth_to_json(truth: ExactTopKResult) -> dict[str, object]:
+    return {
+        "metric": truth.metric,
+        "k": truth.k,
+        "candidate_count": truth.candidate_count,
+        "block_rows": truth.block_rows,
+        "blocks_scanned": truth.blocks_scanned,
+        "native_used": truth.native_used,
+        "native_library_source": truth.native_library_source,
+        "native_capabilities": (
+            truth.native_capabilities.to_json()
+            if truth.native_capabilities is not None
+            else None
+        ),
+        "first_query_indices": [
+            int(index) for index in truth.indices[0].tolist() if int(index) >= 0
+        ],
+    }
 
 
 def _run_postfilter(

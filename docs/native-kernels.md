@@ -134,9 +134,11 @@ export VECADVISOR_NATIVE_DISTANCE_LIB="$PWD/native/build/libvecadvisor_distance.
 ```
 
 On macOS, use the corresponding `.dylib` path. Benchmark JSON includes
-`ground_truth.native_used` so runs can distinguish native-backed exact
-ground-truth from the NumPy fallback. The library is optional; no runtime
-failure should occur simply because it is not installed.
+`ground_truth.native_used`, `ground_truth.native_library_source`, and
+`ground_truth.native_capabilities` so runs can distinguish native-backed exact
+ground-truth from the NumPy fallback and record which runtime kernels were
+actually selected. The library is optional; no runtime failure should occur
+simply because it is not installed.
 
 Native CI builds the shared library on Linux and Windows, then runs
 `tests/test_native_distance_integration.py` with

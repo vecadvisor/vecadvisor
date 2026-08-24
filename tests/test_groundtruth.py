@@ -4,7 +4,12 @@ import pytest
 
 from vecadvisor.bench import groundtruth
 from vecadvisor.bench.groundtruth import exact_topk, max_block_rows_for_memory, recall_at_k
-from vecadvisor.native_distance import NativeDistanceError, NativeTopKResult
+from vecadvisor.bench.runner import ground_truth_to_json
+from vecadvisor.native_distance import (
+    NativeDistanceError,
+    NativeKernelCapabilities,
+    NativeTopKResult,
+)
 
 
 def test_exact_topk_respects_filter_mask_and_blocks() -> None:
@@ -53,10 +58,17 @@ def test_exact_topk_uses_native_loader_when_available(monkeypatch: pytest.Monkey
     )
 
     assert result.native_used is True
+    assert result.native_library_source == "fake-native"
+    assert result.native_capabilities == _fake_capabilities()
     assert fake_native.calls == 4
+    assert fake_native.capability_calls == 1
     assert result.indices.tolist() == [[0, 1], [3, 1]]
     assert result.distances.tolist()[0] == pytest.approx([0.2, 0.8])
     assert result.distances.tolist()[1] == pytest.approx([1.0, 8.0])
+
+    payload = ground_truth_to_json(result)
+    assert payload["native_library_source"] == "fake-native"
+    assert payload["native_capabilities"] == _fake_capabilities().to_json()
 
 
 def test_exact_topk_converts_native_inner_product_scores(
@@ -144,6 +156,12 @@ def test_exact_topk_streams_query_blocks_without_materializing_full_matrix(
 class _FakeNativeLibrary:
     def __init__(self) -> None:
         self.calls = 0
+        self.capability_calls = 0
+        self.source = "fake-native"
+
+    def capabilities(self) -> NativeKernelCapabilities:
+        self.capability_calls += 1
+        return _fake_capabilities()
 
     def topk(self, query: object, corpus: object, *, k: int, metric: str) -> NativeTopKResult:
         self.calls += 1
@@ -189,3 +207,14 @@ class _FailingNativeLibrary:
         del query, corpus, k, metric
         self.calls += 1
         raise NativeDistanceError("synthetic native failure")
+
+
+def _fake_capabilities() -> NativeKernelCapabilities:
+    return NativeKernelCapabilities(
+        source="fake-native",
+        avx2_compiled=True,
+        avx2_runtime=False,
+        l2_kernel="scalar",
+        inner_product_kernel="scalar",
+        cosine_kernel="scalar",
+    )

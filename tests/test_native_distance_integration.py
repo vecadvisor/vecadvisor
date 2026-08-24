@@ -30,6 +30,13 @@ def native_library_path() -> Iterator[Path]:
 def test_native_topk_c_abi_matches_expected_distances(native_library_path: Path) -> None:
     np = pytest.importorskip("numpy")
     library = NativeDistanceLibrary.load(native_library_path)
+    capabilities = library.capabilities()
+
+    assert capabilities.source == str(native_library_path)
+    assert capabilities.l2_kernel in {"avx2", "scalar"}
+    assert capabilities.inner_product_kernel in {"avx2", "scalar"}
+    assert capabilities.cosine_kernel in {"avx2", "scalar"}
+    assert capabilities.avx2_runtime <= capabilities.avx2_compiled
 
     l2 = library.topk(
         np.asarray([0.2, 0.0], dtype="float32"),
@@ -68,6 +75,8 @@ def test_exact_topk_uses_real_native_shared_library(
     )
 
     assert result.native_used is True
+    assert result.native_library_source == str(native_library_path)
+    assert result.native_capabilities is not None
     assert result.indices.tolist() == [[0, 1], [3, 1]]
     assert result.distances.tolist()[0] == pytest.approx([0.2, 0.8])
     assert result.distances.tolist()[1] == pytest.approx([1.0, 8.0])

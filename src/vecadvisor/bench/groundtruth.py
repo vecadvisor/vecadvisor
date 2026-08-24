@@ -8,6 +8,7 @@ from typing import Any
 from vecadvisor.native_distance import (
     NativeDistanceError,
     NativeDistanceLibrary,
+    NativeKernelCapabilities,
     NativeTopKResult,
     load_default_native_distance_library,
 )
@@ -27,6 +28,8 @@ class ExactTopKResult:
     block_rows: int
     blocks_scanned: int
     native_used: bool = False
+    native_library_source: str | None = None
+    native_capabilities: NativeKernelCapabilities | None = None
 
 
 @dataclass(frozen=True)
@@ -77,6 +80,7 @@ def exact_topk(
     out_distances = np.full((int(queries.shape[0]), k), np.inf, dtype="float64")
     blocks_scanned = math.ceil(int(base.shape[0]) / effective_block_rows)
     native_library = _load_native_distance_library() if use_native else None
+    native_capabilities = _native_capabilities(native_library)
     native_used = False
 
     for query_index in range(int(queries.shape[0])):
@@ -128,6 +132,8 @@ def exact_topk(
         block_rows=effective_block_rows,
         blocks_scanned=blocks_scanned,
         native_used=native_used,
+        native_library_source=_native_library_source(native_library, native_used=native_used),
+        native_capabilities=native_capabilities if native_used else None,
     )
 
 
@@ -231,6 +237,27 @@ def _native_distances_to_scores(np: Any, native: NativeTopKResult, *, metric: st
     if metric == "ip":
         return -distances
     return distances
+
+
+def _native_capabilities(
+    native_library: NativeDistanceLibrary | None,
+) -> NativeKernelCapabilities | None:
+    if native_library is None:
+        return None
+    try:
+        return native_library.capabilities()
+    except (AttributeError, NativeDistanceError, OSError):
+        return None
+
+
+def _native_library_source(
+    native_library: NativeDistanceLibrary | None,
+    *,
+    native_used: bool,
+) -> str | None:
+    if native_library is None or not native_used:
+        return None
+    return getattr(native_library, "source", None)
 
 
 def _distance_scores(np: Any, block: Any, query: Any, *, metric: str) -> Any:

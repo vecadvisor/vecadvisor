@@ -7,7 +7,7 @@ import os
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 NATIVE_DISTANCE_LIB_ENV = "VECADVISOR_NATIVE_DISTANCE_LIB"
 
@@ -21,6 +21,36 @@ _METRIC_CODES = {
 
 class NativeDistanceError(RuntimeError):
     """Raised when the optional native distance library rejects a call."""
+
+
+class _NativeKernelCapabilitiesStruct(ctypes.Structure):
+    _fields_: ClassVar[list[tuple[str, Any]]] = [
+        ("avx2_compiled", ctypes.c_int),
+        ("avx2_runtime", ctypes.c_int),
+        ("l2_kernel", ctypes.c_char_p),
+        ("inner_product_kernel", ctypes.c_char_p),
+        ("cosine_kernel", ctypes.c_char_p),
+    ]
+
+
+@dataclass(frozen=True)
+class NativeKernelCapabilities:
+    source: str
+    avx2_compiled: bool
+    avx2_runtime: bool
+    l2_kernel: str
+    inner_product_kernel: str
+    cosine_kernel: str
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "source": self.source,
+            "avx2_compiled": self.avx2_compiled,
+            "avx2_runtime": self.avx2_runtime,
+            "l2_kernel": self.l2_kernel,
+            "inner_product_kernel": self.inner_product_kernel,
+            "cosine_kernel": self.cosine_kernel,
+        }
 
 
 @dataclass(frozen=True)
@@ -86,7 +116,27 @@ class NativeDistanceLibrary:
             count=count,
         )
 
+    def capabilities(self) -> NativeKernelCapabilities:
+        out = _NativeKernelCapabilitiesStruct()
+        status = self._library.vecadvisor_distance_get_capabilities(ctypes.byref(out))
+        if int(status) != _STATUS_OK:
+            raise NativeDistanceError(
+                f"vecadvisor_distance_get_capabilities failed with status {int(status)}"
+            )
+        return NativeKernelCapabilities(
+            source=self.source,
+            avx2_compiled=bool(out.avx2_compiled),
+            avx2_runtime=bool(out.avx2_runtime),
+            l2_kernel=_decode_c_string(out.l2_kernel),
+            inner_product_kernel=_decode_c_string(out.inner_product_kernel),
+            cosine_kernel=_decode_c_string(out.cosine_kernel),
+        )
+
     def _configure_abi(self) -> None:
+        get_capabilities = self._library.vecadvisor_distance_get_capabilities
+        get_capabilities.argtypes = [ctypes.POINTER(_NativeKernelCapabilitiesStruct)]
+        get_capabilities.restype = ctypes.c_int
+
         topk = self._library.vecadvisor_distance_topk
         topk.argtypes = [
             ctypes.c_int,
@@ -118,7 +168,7 @@ def load_default_native_distance_library() -> NativeDistanceLibrary | None:
     for candidate in candidates:
         try:
             return NativeDistanceLibrary.load(candidate)
-        except OSError:
+        except (AttributeError, OSError):
             continue
     return None
 
@@ -129,6 +179,12 @@ def _metric_code(metric: str) -> int:
     except KeyError as exc:
         valid = ", ".join(sorted(_METRIC_CODES))
         raise ValueError(f"metric must be one of: {valid}") from exc
+
+
+def _decode_c_string(value: bytes | None) -> str:
+    if value is None:
+        return "unknown"
+    return value.decode("utf-8")
 
 
 def _numpy() -> Any:

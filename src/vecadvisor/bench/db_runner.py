@@ -19,6 +19,7 @@ from .runner import (
     STRATEGY_PARTITION,
     STRATEGY_POSTFILTER,
     BenchmarkReport,
+    ground_truth_to_json,
     strategy_metrics_from_indices,
 )
 
@@ -287,17 +288,7 @@ def run_postgres_synthetic_benchmark(
             "maintenance_work_mem": maintenance_work_mem,
             "postgres": pg_capabilities_to_json(capabilities),
         },
-        ground_truth={
-            "metric": truth.metric,
-            "k": truth.k,
-            "candidate_count": truth.candidate_count,
-            "block_rows": truth.block_rows,
-            "blocks_scanned": truth.blocks_scanned,
-            "native_used": truth.native_used,
-            "first_query_indices": [
-                int(index) for index in truth.indices[0].tolist() if int(index) >= 0
-            ],
-        },
+        ground_truth=ground_truth_to_json(truth),
         strategies=tuple(metrics),
         elapsed_ms=elapsed_ms,
         notes=(

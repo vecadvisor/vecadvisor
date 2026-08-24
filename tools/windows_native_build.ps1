@@ -67,7 +67,7 @@ Write-Host "CMake: $cmake"
 Write-Host "MSVC environment: $vcvars"
 Write-Host "Build dir: $BuildPath"
 
-$configure = "$(Quote-CmdArg $cmake) -S $(Quote-CmdArg $NativeDir) -B $(Quote-CmdArg $BuildPath) -G ""Visual Studio 17 2022"" -A x64 -DCMAKE_BUILD_TYPE=$Configuration"
+$configure = "$(Quote-CmdArg $cmake) -S $(Quote-CmdArg $NativeDir) -B $(Quote-CmdArg $BuildPath) -A x64 -DCMAKE_BUILD_TYPE=$Configuration"
 $build = "$(Quote-CmdArg $cmake) --build $(Quote-CmdArg $BuildPath) --config $Configuration --parallel"
 $test = "$(Quote-CmdArg $ctest) --test-dir $(Quote-CmdArg $BuildPath) -C $Configuration --output-on-failure"
 $command = "$(Quote-CmdArg $vcvars) && $configure && $build && $test"

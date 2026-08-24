@@ -8,7 +8,7 @@ on:
 
 jobs:
   native:
-    name: C++ distance kernels
+    name: Linux C++ distance kernels
     runs-on: ubuntu-latest
 
     steps:
@@ -96,3 +96,24 @@ jobs:
             native/artifacts/native-distance-kernels.json
             native/artifacts/native-distance-kernels.md
             native/artifacts/native-distance-kernels.svg
+
+  native-windows:
+    name: Windows C++ distance kernels
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install Python native dependencies
+        run: python -m pip install -e ".[dev]"
+
+      - name: Build and test native library with MSVC
+        shell: pwsh
+        run: .\tools\windows_native_build.ps1

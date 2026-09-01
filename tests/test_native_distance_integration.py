@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+import json
 import os
 from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
+from typer.testing import CliRunner
 
 from vecadvisor import native_distance
 from vecadvisor.bench.groundtruth import exact_topk
+from vecadvisor.cli import app
 from vecadvisor.native_distance import NativeDistanceLibrary
 
 
@@ -57,6 +60,17 @@ def test_native_topk_c_abi_matches_expected_distances(native_library_path: Path)
     assert inner_product.count == 2
     assert inner_product.indices.tolist() == [1, 0]
     assert inner_product.distances.tolist() == pytest.approx([3.0, 1.0])
+
+
+def test_native_info_cli_reports_real_shared_library(native_library_path: Path) -> None:
+    result = CliRunner().invoke(app, ["native-info", "--library", str(native_library_path)])
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    assert payload["available"] is True
+    assert payload["source_kind"] == "explicit"
+    assert payload["source"] == str(native_library_path)
+    assert payload["capabilities"]["l2_kernel"] in {"avx2", "scalar"}
 
 
 def test_exact_topk_uses_real_native_shared_library(

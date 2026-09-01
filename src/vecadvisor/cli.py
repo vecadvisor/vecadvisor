@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated, Any
@@ -96,6 +97,12 @@ from .models import (
     StatisticsSuggestion,
     StrategyPlan,
     TableStats,
+)
+from .native_distance import (
+    NATIVE_DISTANCE_LIB_ENV,
+    NativeDistanceError,
+    NativeDistanceLibrary,
+    load_default_native_distance_library,
 )
 from .pgversion import load_pg_capabilities, pg_capabilities_to_json
 from .plan import compare_selectivity, explain_query
@@ -239,6 +246,24 @@ def workload_command(
     payload = workload_report_to_json(report)
     payload["dsn"] = _redact_dsn(dsn)
     console.print_json(json.dumps(payload))
+
+
+@app.command(name="native-info")
+def native_info_command(
+    library: Annotated[
+        Path | None,
+        typer.Option(
+            "--library",
+            help=(
+                "Explicit native shared-library path. Defaults to "
+                f"{NATIVE_DISTANCE_LIB_ENV} or the platform library search path."
+            ),
+        ),
+    ] = None,
+) -> None:
+    """Show optional native distance-kernel availability and dispatch."""
+
+    console.print_json(json.dumps(_native_info_to_json(library)))
 
 
 @app.command()
@@ -2292,6 +2317,57 @@ def _print_diagnostic_payload(payload: dict[str, object], output_format: str) ->
         console.print_json(json.dumps(payload))
         return
     console.out(render_explain_vector(payload), end="")
+
+
+def _native_info_to_json(library: Path | None) -> dict[str, object]:
+    configured_env = os.environ.get(NATIVE_DISTANCE_LIB_ENV)
+    source_kind = "explicit" if library is not None else ("env" if configured_env else "system")
+    native_library: NativeDistanceLibrary | None = None
+    error: str | None = None
+
+    if library is not None:
+        try:
+            native_library = NativeDistanceLibrary.load(library)
+        except (AttributeError, OSError) as exc:
+            error = str(exc)
+    else:
+        native_library = load_default_native_distance_library()
+        if native_library is None and configured_env:
+            error = "configured native library could not be loaded"
+
+    if native_library is None:
+        return {
+            "available": False,
+            "source": str(library) if library is not None else None,
+            "source_kind": source_kind,
+            "env_var": NATIVE_DISTANCE_LIB_ENV,
+            "configured_env": configured_env,
+            "error": error,
+            "capabilities": None,
+        }
+
+    try:
+        capabilities = native_library.capabilities()
+    except (AttributeError, NativeDistanceError, OSError) as exc:
+        return {
+            "available": False,
+            "source": native_library.source,
+            "source_kind": source_kind,
+            "env_var": NATIVE_DISTANCE_LIB_ENV,
+            "configured_env": configured_env,
+            "error": str(exc),
+            "capabilities": None,
+        }
+
+    return {
+        "available": True,
+        "source": native_library.source,
+        "source_kind": source_kind,
+        "env_var": NATIVE_DISTANCE_LIB_ENV,
+        "configured_env": configured_env,
+        "error": None,
+        "capabilities": capabilities.to_json(),
+    }
 
 
 def _redact_dsn(dsn: str) -> str:

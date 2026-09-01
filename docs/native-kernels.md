@@ -140,6 +140,19 @@ ground-truth from the NumPy fallback and record which runtime kernels were
 actually selected. The library is optional; no runtime failure should occur
 simply because it is not installed.
 
+Use `native-info` to inspect availability and runtime dispatch:
+
+```bash
+vecadvisor native-info
+vecadvisor native-info --library native/build/libvecadvisor_distance.so
+```
+
+On Windows, pass the DLL path:
+
+```powershell
+vecadvisor native-info --library .\native\build-msvc\Release\vecadvisor_distance.dll
+```
+
 Native CI builds the shared library on Linux and Windows, then runs
 `tests/test_native_distance_integration.py` with
 `VECADVISOR_NATIVE_DISTANCE_LIB` set, so the C ABI, Python `ctypes` wrapper,

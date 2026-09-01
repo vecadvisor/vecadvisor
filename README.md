@@ -526,6 +526,13 @@ Python benchmark ground-truth can use that helper when
 `ground_truth.native_capabilities`; if the library is missing, VecAdvisor falls
 back to the NumPy path.
 
+Inspect native availability and runtime dispatch with:
+
+```bash
+vecadvisor native-info
+vecadvisor native-info --library native/build/libvecadvisor_distance.so
+```
+
 ## Prior Art And Clean-Room Notes
 
 This project builds from public PostgreSQL, pgvector, and filtered ANN

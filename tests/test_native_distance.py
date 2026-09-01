@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import ctypes
+import json
+from pathlib import Path
 
 import pytest
+from typer.testing import CliRunner
 
 from vecadvisor import native_distance
+from vecadvisor.cli import app
 from vecadvisor.native_distance import NativeDistanceLibrary
 
 
@@ -18,6 +22,36 @@ def test_default_native_loader_returns_none_when_library_is_unavailable(
     assert native_distance.load_default_native_distance_library() is None
 
     native_distance.load_default_native_distance_library.cache_clear()
+
+
+def test_native_info_cli_reports_unavailable_when_library_is_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    native_distance.load_default_native_distance_library.cache_clear()
+    monkeypatch.delenv(native_distance.NATIVE_DISTANCE_LIB_ENV, raising=False)
+    monkeypatch.setattr(native_distance.ctypes.util, "find_library", lambda name: None)
+
+    result = CliRunner().invoke(app, ["native-info"])
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    assert payload["available"] is False
+    assert payload["env_var"] == native_distance.NATIVE_DISTANCE_LIB_ENV
+    assert payload["capabilities"] is None
+
+    native_distance.load_default_native_distance_library.cache_clear()
+
+
+def test_native_info_cli_reports_explicit_library_load_error(tmp_path: Path) -> None:
+    missing_library = tmp_path / "missing-native-library.dll"
+
+    result = CliRunner().invoke(app, ["native-info", "--library", str(missing_library)])
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    assert payload["available"] is False
+    assert payload["source_kind"] == "explicit"
+    assert payload["source"] == str(missing_library)
 
 
 def test_default_native_loader_ignores_unloadable_configured_path(

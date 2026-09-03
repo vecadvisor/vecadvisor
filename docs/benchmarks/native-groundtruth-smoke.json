@@ -1,0 +1,99 @@
+{
+  "dataset": {
+    "id": "synthetic",
+    "rows": 4096,
+    "dim": 32,
+    "queries": 8,
+    "clusters": 8,
+    "query_policy": "uniform",
+    "target_filter_selectivity": 0.1,
+    "observed_filter_selectivity": 0.103515625,
+    "correlation": -0.6,
+    "dataset_seed": 0,
+    "query_seed": 1
+  },
+  "k": 10,
+  "metric": "l2",
+  "block_rows": 512,
+  "max_distance_matrix_bytes": 268435456,
+  "warmup_iterations": 2,
+  "numpy": {
+    "backend": "numpy",
+    "native_requested": false,
+    "iterations": 5,
+    "warmup_iterations": 2,
+    "elapsed_ms_total": 52.411701530218124,
+    "elapsed_ms_mean": 10.482340306043625,
+    "elapsed_ms_min": 9.386800229549408,
+    "ground_truth": {
+      "metric": "l2",
+      "k": 10,
+      "candidate_count": 424,
+      "block_rows": 512,
+      "blocks_scanned": 8,
+      "native_used": false,
+      "native_library_source": null,
+      "native_capabilities": null,
+      "first_query_indices": [
+        2738,
+        3691,
+        2443,
+        226,
+        1996,
+        798,
+        3102,
+        3784,
+        2983,
+        3500
+      ]
+    }
+  },
+  "native": {
+    "backend": "native",
+    "native_requested": true,
+    "iterations": 5,
+    "warmup_iterations": 2,
+    "elapsed_ms_total": 35.88179964572191,
+    "elapsed_ms_mean": 7.1763599291443825,
+    "elapsed_ms_min": 5.593299865722656,
+    "ground_truth": {
+      "metric": "l2",
+      "k": 10,
+      "candidate_count": 424,
+      "block_rows": 512,
+      "blocks_scanned": 8,
+      "native_used": true,
+      "native_library_source": "native\\build-msvc-ci-fix\\Release\\vecadvisor_distance.dll",
+      "native_capabilities": {
+        "source": "native\\build-msvc-ci-fix\\Release\\vecadvisor_distance.dll",
+        "avx2_compiled": true,
+        "avx2_runtime": true,
+        "l2_kernel": "avx2",
+        "inner_product_kernel": "avx2",
+        "cosine_kernel": "avx2"
+      },
+      "first_query_indices": [
+        2738,
+        3691,
+        2443,
+        226,
+        1996,
+        798,
+        3102,
+        3784,
+        2983,
+        3500
+      ]
+    }
+  },
+  "comparison": {
+    "recall_at_k": 1.0,
+    "exact_index_match": true,
+    "max_abs_distance_delta": 5.017423077013916e-08,
+    "speedup": 1.4606765002787987
+  },
+  "notes": [
+    "native run used vecadvisor_distance_topk for at least one block",
+    "both paths use blocked exact search and avoid materializing an N x Q matrix"
+  ]
+}

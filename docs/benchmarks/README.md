@@ -33,6 +33,8 @@ VecAdvisor alpha.
   MVP2 native kernel benchmark artifact comparing AVX2 dispatch with a
   scalar-only fallback build.
 - `../assets/native-distance-kernels.svg`: grouped native kernel chart.
+- `native-groundtruth-smoke.json`: product-path smoke report comparing NumPy
+  exact ground truth with the native bounded top-k C ABI.
 
 These files are intentionally small enough to regenerate during local
 development. Synthetic files validate cost-model behavior and safety checks.

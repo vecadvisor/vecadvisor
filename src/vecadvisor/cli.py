@@ -31,6 +31,11 @@ from .bench.datasets import (
     load_file_queries,
 )
 from .bench.db_runner import parse_db_strategy_list, run_postgres_synthetic_benchmark
+from .bench.groundtruth_compare import (
+    groundtruth_comparison_to_json,
+    run_groundtruth_comparison,
+    write_groundtruth_comparison_report,
+)
 from .bench.plots import (
     DEFAULT_CHART_TITLE,
     DEFAULT_PARETO_TITLE,
@@ -1036,6 +1041,150 @@ def benchmark(
     console.print_json(
         json.dumps(payload)
     )
+
+
+@app.command(name="benchmark-groundtruth")
+def benchmark_groundtruth(
+    dataset: Annotated[str, typer.Option(help="Benchmark dataset id.")] = "synthetic",
+    rows: Annotated[int, typer.Option("--rows", min=1, help="Synthetic base row count.")] = 5_000,
+    dim: Annotated[int, typer.Option("--dim", min=1, help="Synthetic vector dimension.")] = 64,
+    queries: Annotated[
+        int,
+        typer.Option("--queries", min=1, help="Synthetic query-vector count."),
+    ] = 20,
+    clusters: Annotated[
+        int,
+        typer.Option("--clusters", min=1, help="Synthetic cluster count."),
+    ] = 16,
+    vectors_path: Annotated[
+        Path | None,
+        typer.Option("--vectors", help="2D .npy vector matrix for --dataset file."),
+    ] = None,
+    filter_mask_path: Annotated[
+        Path | None,
+        typer.Option(
+            "--filter-mask",
+            help="1D .npy boolean/numeric filter mask for --dataset file.",
+        ),
+    ] = None,
+    query_vectors_path: Annotated[
+        Path | None,
+        typer.Option("--query-vectors", help="2D .npy query vector matrix for --dataset file."),
+    ] = None,
+    filter_selectivity: Annotated[
+        float,
+        typer.Option(
+            "--filter-selectivity",
+            min=0.000001,
+            max=0.999999,
+            help="Target global selectivity for the synthetic filter.",
+        ),
+    ] = 0.1,
+    correlation: Annotated[
+        float,
+        typer.Option(
+            "--correlation",
+            min=-1.0,
+            max=1.0,
+            help="Synthetic filter/cluster correlation in [-1, 1].",
+        ),
+    ] = 0.0,
+    limit: Annotated[int, typer.Option("--limit", min=1, help="Ground-truth k.")] = 10,
+    metric: Annotated[
+        str,
+        typer.Option("--metric", help="Distance metric: l2, ip, cosine."),
+    ] = "l2",
+    block_rows: Annotated[
+        int | None,
+        typer.Option(
+            "--block-rows",
+            min=1,
+            help="Rows per exact-search block. Defaults to memory-budget derived value.",
+        ),
+    ] = None,
+    max_distance_matrix_bytes: Annotated[
+        int,
+        typer.Option(
+            "--max-distance-matrix-bytes",
+            min=1,
+            help="Memory budget for deriving blocked exact-search row batches.",
+        ),
+    ] = 256 * 1024 * 1024,
+    iterations: Annotated[
+        int,
+        typer.Option("--iterations", min=1, help="Timing iterations per backend."),
+    ] = 3,
+    warmup_iterations: Annotated[
+        int,
+        typer.Option(
+            "--warmup-iterations",
+            min=0,
+            help="Untimed warmup iterations per backend before measuring.",
+        ),
+    ] = 1,
+    native_library: Annotated[
+        Path | None,
+        typer.Option("--native-library", help="Explicit vecadvisor_distance shared library."),
+    ] = None,
+    require_native: Annotated[
+        bool,
+        typer.Option(
+            "--require-native",
+            help="Fail if the native vecadvisor_distance_topk path is unavailable.",
+        ),
+    ] = False,
+    query_policy: Annotated[
+        str,
+        typer.Option(
+            "--query-policy",
+            help="Synthetic query clusters: uniform, filter_hot, or filter_cold.",
+        ),
+    ] = "uniform",
+    seed: Annotated[int, typer.Option("--seed", help="Synthetic dataset seed.")] = 0,
+    out: Annotated[
+        Path | None,
+        typer.Option("--out", help="Optional JSON benchmark output path."),
+    ] = None,
+) -> None:
+    """Compare NumPy exact ground truth with the optional native top-k path."""
+
+    try:
+        benchmark_dataset, query_set = _load_cli_benchmark_inputs(
+            dataset=dataset,
+            rows=rows,
+            dim=dim,
+            queries=queries,
+            clusters=clusters,
+            filter_selectivity=filter_selectivity,
+            correlation=correlation,
+            query_policy=query_policy,
+            seed=seed,
+            vectors_path=vectors_path,
+            filter_mask_path=filter_mask_path,
+            query_vectors_path=query_vectors_path,
+        )
+        report = run_groundtruth_comparison(
+            dataset=benchmark_dataset,
+            queries=query_set,
+            k=limit,
+            metric=metric,
+            block_rows=block_rows,
+            max_distance_matrix_bytes=max_distance_matrix_bytes,
+            iterations=iterations,
+            warmup_iterations=warmup_iterations,
+            native_library=native_library,
+            require_native=require_native,
+        )
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    if out is not None:
+        write_groundtruth_comparison_report(report, out)
+    payload = groundtruth_comparison_to_json(report)
+    if out is not None:
+        payload["output"] = {"path": str(out), "format": "json"}
+
+    console.print_json(json.dumps(payload))
 
 
 @app.command(name="benchmark-sweep")

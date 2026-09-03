@@ -533,6 +533,22 @@ vecadvisor native-info
 vecadvisor native-info --library native/build/libvecadvisor_distance.so
 ```
 
+Verify the product path uses the native bounded top-k helper:
+
+```bash
+vecadvisor benchmark-groundtruth \
+  --rows 4096 \
+  --dim 32 \
+  --queries 8 \
+  --limit 10 \
+  --native-library native/build/libvecadvisor_distance.so \
+  --require-native
+```
+
+The smoke artifact records exact agreement with the NumPy fallback plus runtime
+kernel dispatch:
+[`docs/benchmarks/native-groundtruth-smoke.json`](https://github.com/vecadvisor/vecadvisor/blob/main/docs/benchmarks/native-groundtruth-smoke.json).
+
 ## Prior Art And Clean-Room Notes
 
 This project builds from public PostgreSQL, pgvector, and filtered ANN

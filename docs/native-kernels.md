@@ -153,6 +153,25 @@ On Windows, pass the DLL path:
 vecadvisor native-info --library .\native\build-msvc\Release\vecadvisor_distance.dll
 ```
 
+To verify the Python exact ground-truth path is using the native bounded top-k
+helper, run:
+
+```bash
+vecadvisor benchmark-groundtruth \
+  --rows 4096 \
+  --dim 32 \
+  --queries 8 \
+  --limit 10 \
+  --native-library native/build/libvecadvisor_distance.so \
+  --require-native
+```
+
+The command also runs the NumPy exact path, compares top-k results, reports the
+maximum distance delta, and emits the native runtime capabilities. The committed
+smoke artifact is:
+
+- `docs/benchmarks/native-groundtruth-smoke.json`
+
 Native CI builds the shared library on Linux and Windows, then runs
 `tests/test_native_distance_integration.py` with
 `VECADVISOR_NATIVE_DISTANCE_LIB` set, so the C ABI, Python `ctypes` wrapper,

@@ -5,9 +5,9 @@ publishing workflow for package distribution.
 
 ## Current Public Alpha
 
-- GitHub release: `v0.1.0a4`
-- PyPI package: `vecadvisor==0.1.0a4`
-- Package version: `0.1.0a4`
+- GitHub release: `v0.1.0a5`
+- PyPI package: `vecadvisor==0.1.0a5`
+- Package version: `0.1.0a5`
 - Artifacts: wheel and source distribution attached to the release
 - CI gate: Python 3.11 and Python 3.12
 

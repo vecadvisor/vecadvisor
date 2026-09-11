@@ -2,8 +2,8 @@
 
 VecAdvisor MVP2 Part B adds an in-database extension surface without changing
 PostgreSQL planner behavior. The first scaffold is intentionally narrow:
-metadata-only SQL functions, a pgrx crate layout, and a documented path toward
-safe catalog/SPI collection.
+metadata SQL functions, a pure post-filter risk estimator, a pgrx crate layout,
+and a documented path toward safe catalog/SPI collection.
 
 ## Current Surface
 
@@ -16,11 +16,37 @@ Initial SQL functions:
 
 - `vecadvisor_extension_version() RETURNS text`
 - `vecadvisor_capabilities() RETURNS jsonb`
+- `vecadvisor_postfilter_risk(limit_count int, ef_search int,
+  global_selectivity double precision,
+  local_selectivity double precision,
+  recall_at_ef double precision) RETURNS jsonb`
 
 The capability document reports that SQL metadata functions are enabled while
 SPI/catalog probes, planner hooks, and Python CLI parity are not yet enabled.
-This keeps the scaffold safe to load into a database while the architecture
-settles.
+The post-filter risk function is a pure calculation: it does not read catalogs,
+run probes, install hooks, mutate GUCs, or change planner behavior.
+
+Example:
+
+```sql
+SELECT vecadvisor_postfilter_risk(
+  limit_count        => 10,
+  ef_search          => 40,
+  global_selectivity => 0.05,
+  local_selectivity  => 0.00,
+  recall_at_ef       => 0.90
+);
+```
+
+Use `NULL` for `local_selectivity` or `recall_at_ef` when that input has not
+been measured yet.
+
+The returned JSON records expected post-filter survivors, whether the scan is
+expected to return `LIMIT` rows, an estimated survivor-bound recall, the
+minimum `hnsw.ef_search` needed for expected survivors to reach `LIMIT`, and a
+small recommendation list. When `local_selectivity` is omitted, the function
+falls back to global selectivity but marks the risk as at least medium because
+global selectivity can be wrong for correlated vector/filter workloads.
 
 ## SPI And Catalog Access Plan
 
@@ -67,7 +93,9 @@ optimizer path:
 - explicit degraded-confidence behavior when probes fail.
 
 The Python CLI remains the reference implementation until these parity tests
-exist.
+exist. The current `vecadvisor_postfilter_risk()` function is deliberately
+smaller than `vecadvisor recommend`; it exists to make the extension surface
+testable while preserving the no-planner-regression invariant.
 
 ## Local Build
 

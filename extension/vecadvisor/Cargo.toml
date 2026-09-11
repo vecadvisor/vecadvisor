@@ -5,7 +5,7 @@ edition = "2024"
 rust-version = "1.96"
 license = "Apache-2.0"
 publish = false
-description = "PostgreSQL extension scaffold for VecAdvisor"
+description = "PostgreSQL extension scaffold for VecAdvisor filtered vector search advice"
 
 [lib]
 name = "vecadvisor"

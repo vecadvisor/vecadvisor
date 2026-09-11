@@ -549,6 +549,19 @@ The smoke artifact records exact agreement with the NumPy fallback plus runtime
 kernel dispatch:
 [`docs/benchmarks/native-groundtruth-smoke.json`](https://github.com/vecadvisor/vecadvisor/blob/main/docs/benchmarks/native-groundtruth-smoke.json).
 
+## Rust/pgrx Extension
+
+MVP2 Part B has a safe pgrx extension scaffold under `extension/vecadvisor`.
+It exposes metadata functions plus `vecadvisor_postfilter_risk(...)`, a pure
+SQL-callable estimator for post-filter candidate survival. The function accepts
+`LIMIT`, `hnsw.ef_search`, global selectivity, optional local selectivity, and
+optional calibrated ANN recall, then returns JSON with expected survivors,
+returns-k risk, survivor-bound recall, and mitigation hints.
+
+The extension is intentionally read-only at this stage: no planner hooks, no
+catalog writes, no probe execution, and no GUC mutation. The Python CLI remains
+the reference implementation until SQL parity tests exist.
+
 ## Prior Art And Clean-Room Notes
 
 This project builds from public PostgreSQL, pgvector, and filtered ANN

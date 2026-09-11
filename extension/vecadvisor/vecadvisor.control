@@ -1,4 +1,4 @@
-comment = 'VecAdvisor SQL-callable advisor metadata scaffold'
+comment = 'VecAdvisor SQL-callable filtered vector search advisor scaffold'
 default_version = '0.1.0-alpha.4'
 module_pathname = '$libdir/vecadvisor'
 relocatable = true

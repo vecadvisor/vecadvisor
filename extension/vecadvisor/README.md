@@ -1,9 +1,9 @@
 # VecAdvisor pgrx Extension
 
 This directory is the MVP2 Part B scaffold for an in-database VecAdvisor
-surface. It is intentionally metadata-only for now: the extension exposes
-version and capability information, but it does not install planner hooks,
-change PostgreSQL cost estimates, or run advisory probes.
+surface. The current extension exposes version/capability metadata plus a
+pure post-filter risk estimator. It does not install planner hooks, change
+PostgreSQL cost estimates, or run advisory probes.
 
 ## Build Locally
 
@@ -35,10 +35,22 @@ Then in PostgreSQL:
 CREATE EXTENSION vecadvisor;
 SELECT vecadvisor_extension_version();
 SELECT vecadvisor_capabilities();
+SELECT vecadvisor_postfilter_risk(
+  limit_count        => 10,
+  ef_search          => 40,
+  global_selectivity => 0.05,
+  local_selectivity  => 0.00,
+  recall_at_ef       => 0.90
+);
 ```
 
 ## Scope
 
+`vecadvisor_postfilter_risk()` is deterministic and metadata-free: it only uses
+the selectivity inputs supplied by the caller. Pass `NULL` for
+`local_selectivity` when no local probe is available; the response falls back
+to global selectivity and marks the result as lower confidence.
+
 This scaffold is a safe starting point for future `vector_advise()` and
-`explain_vector()` SQL functions. The first implementation deliberately avoids
+`explain_vector()` SQL functions. The implementation deliberately avoids
 unsafe planner hooks and mutable global state.

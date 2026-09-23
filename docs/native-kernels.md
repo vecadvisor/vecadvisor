@@ -8,6 +8,16 @@ optional AVX2 implementations for:
 - inner product,
 - cosine distance.
 
+The primary float32 path has scalar and AVX2/FMA dispatch. The C ABI also
+exposes scalar `int8_t` entry points for scalar-quantized vectors:
+
+- `vecadvisor_distance_compute_i8`
+- `vecadvisor_distance_compute_many_i8`
+- `vecadvisor_distance_topk_i8`
+
+These int8 functions are portable scalar kernels for MVP2 groundwork; SIMD
+int8 and fp16/halfvec kernels remain future work.
+
 The Python package does not bundle the native shared library yet. When
 `VECADVISOR_NATIVE_DISTANCE_LIB` points at a locally built shared library,
 Python exact ground-truth can use the native bounded top-k path. When the
@@ -55,6 +65,9 @@ stable boundary for language bindings is the C ABI in
 - `vecadvisor_distance_topk` for one query vector against a row-major corpus
   matrix, returning the best row offsets and metric values without
   materializing all distances;
+- `vecadvisor_distance_compute_i8`, `vecadvisor_distance_compute_many_i8`, and
+  `vecadvisor_distance_topk_i8` for row-major scalar-quantized `int8_t`
+  vectors;
 - `vecadvisor_distance_get_capabilities` for runtime dispatch visibility;
 - status codes instead of exceptions.
 
@@ -79,6 +92,11 @@ row offset.
 The C ABI is versioned conservatively by header shape: append new enum values
 and functions, but do not reorder existing enum values or fields in
 `vecadvisor_kernel_capabilities`.
+
+The int8 ABI is additive and intentionally separate from the float32 ABI. It
+accepts signed one-byte vector values, accumulates into wider numeric types,
+and returns `float` distances/scores. L2 and cosine rank smaller values first;
+inner product ranks larger values first, matching the float32 top-k contract.
 
 CMake builds both targets:
 
@@ -274,7 +292,7 @@ The native layer is not complete yet. The next credibility items are:
 - Add an ARM NEON path so Apple Silicon and ARM server users do not see only
   the scalar implementation.
 - Add AVX-512 after NEON if the benchmark evidence justifies the extra code.
-- Add fp16 and int8 kernels once the float32 path has stable bindings and
-  external baselines.
+- Add fp16/halfvec kernels once the float32 and int8 ABI paths have stable
+  bindings and external baselines.
 - Expand the Rust/pgrx extension scaffold into read-only SQL advisor functions
   once Python parity fixtures are in place.

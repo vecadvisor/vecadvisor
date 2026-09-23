@@ -116,6 +116,84 @@ class NativeDistanceLibrary:
             count=count,
         )
 
+    def compute_many_int8(self, query: Any, corpus: Any, *, metric: str) -> Any:
+        if self._compute_many_i8 is None:
+            raise NativeDistanceError("native int8 compute_many ABI is unavailable")
+        metric_code = _metric_code(metric)
+        np = _numpy()
+        query_array = np.ascontiguousarray(query, dtype=np.int8)
+        corpus_array = np.ascontiguousarray(corpus, dtype=np.int8)
+        if query_array.ndim != 1:
+            raise ValueError("query must be one-dimensional")
+        if corpus_array.ndim != 2:
+            raise ValueError("corpus must be two-dimensional")
+        rows = int(corpus_array.shape[0])
+        dim = int(corpus_array.shape[1])
+        if rows <= 0 or dim <= 0:
+            raise ValueError("corpus must be non-empty")
+        if int(query_array.shape[0]) != dim:
+            raise ValueError("query and corpus dimensions must match")
+
+        out = np.empty(rows, dtype=np.float32)
+        status = self._compute_many_i8(
+            metric_code,
+            query_array.ctypes.data_as(ctypes.POINTER(ctypes.c_int8)),
+            corpus_array.ctypes.data_as(ctypes.POINTER(ctypes.c_int8)),
+            ctypes.c_size_t(rows),
+            ctypes.c_size_t(dim),
+            out.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        )
+        if int(status) != _STATUS_OK:
+            raise NativeDistanceError(
+                f"vecadvisor_distance_compute_many_i8 failed with status {int(status)}"
+            )
+        return out.astype("float64", copy=True)
+
+    def topk_int8(self, query: Any, corpus: Any, *, k: int, metric: str) -> NativeTopKResult:
+        if self._topk_i8 is None:
+            raise NativeDistanceError("native int8 top-k ABI is unavailable")
+        if k <= 0:
+            raise ValueError("k must be positive")
+        metric_code = _metric_code(metric)
+        np = _numpy()
+        query_array = np.ascontiguousarray(query, dtype=np.int8)
+        corpus_array = np.ascontiguousarray(corpus, dtype=np.int8)
+        if query_array.ndim != 1:
+            raise ValueError("query must be one-dimensional")
+        if corpus_array.ndim != 2:
+            raise ValueError("corpus must be two-dimensional")
+        rows = int(corpus_array.shape[0])
+        dim = int(corpus_array.shape[1])
+        if rows <= 0 or dim <= 0:
+            raise ValueError("corpus must be non-empty")
+        if int(query_array.shape[0]) != dim:
+            raise ValueError("query and corpus dimensions must match")
+
+        out_indices = np.empty(k, dtype=np.uintp)
+        out_distances = np.empty(k, dtype=np.float32)
+        out_count = ctypes.c_size_t(0)
+        status = self._topk_i8(
+            metric_code,
+            query_array.ctypes.data_as(ctypes.POINTER(ctypes.c_int8)),
+            corpus_array.ctypes.data_as(ctypes.POINTER(ctypes.c_int8)),
+            ctypes.c_size_t(rows),
+            ctypes.c_size_t(dim),
+            ctypes.c_size_t(k),
+            out_indices.ctypes.data_as(ctypes.POINTER(ctypes.c_size_t)),
+            out_distances.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+            ctypes.byref(out_count),
+        )
+        if int(status) != _STATUS_OK:
+            raise NativeDistanceError(
+                f"vecadvisor_distance_topk_i8 failed with status {int(status)}"
+            )
+        count = int(out_count.value)
+        return NativeTopKResult(
+            indices=out_indices[:count].astype("int64", copy=True),
+            distances=out_distances[:count].astype("float64", copy=True),
+            count=count,
+        )
+
     def capabilities(self) -> NativeKernelCapabilities:
         out = _NativeKernelCapabilitiesStruct()
         status = self._library.vecadvisor_distance_get_capabilities(ctypes.byref(out))
@@ -133,6 +211,9 @@ class NativeDistanceLibrary:
         )
 
     def _configure_abi(self) -> None:
+        self._compute_many_i8: Any | None = None
+        self._topk_i8: Any | None = None
+
         get_capabilities = self._library.vecadvisor_distance_get_capabilities
         get_capabilities.argtypes = [ctypes.POINTER(_NativeKernelCapabilitiesStruct)]
         get_capabilities.restype = ctypes.c_int
@@ -150,6 +231,35 @@ class NativeDistanceLibrary:
             ctypes.POINTER(ctypes.c_size_t),
         ]
         topk.restype = ctypes.c_int
+
+        compute_many_i8 = getattr(self._library, "vecadvisor_distance_compute_many_i8", None)
+        if compute_many_i8 is not None:
+            compute_many_i8.argtypes = [
+                ctypes.c_int,
+                ctypes.POINTER(ctypes.c_int8),
+                ctypes.POINTER(ctypes.c_int8),
+                ctypes.c_size_t,
+                ctypes.c_size_t,
+                ctypes.POINTER(ctypes.c_float),
+            ]
+            compute_many_i8.restype = ctypes.c_int
+            self._compute_many_i8 = compute_many_i8
+
+        topk_i8 = getattr(self._library, "vecadvisor_distance_topk_i8", None)
+        if topk_i8 is not None:
+            topk_i8.argtypes = [
+                ctypes.c_int,
+                ctypes.POINTER(ctypes.c_int8),
+                ctypes.POINTER(ctypes.c_int8),
+                ctypes.c_size_t,
+                ctypes.c_size_t,
+                ctypes.c_size_t,
+                ctypes.POINTER(ctypes.c_size_t),
+                ctypes.POINTER(ctypes.c_float),
+                ctypes.POINTER(ctypes.c_size_t),
+            ]
+            topk_i8.restype = ctypes.c_int
+            self._topk_i8 = topk_i8
 
 
 @lru_cache(maxsize=1)

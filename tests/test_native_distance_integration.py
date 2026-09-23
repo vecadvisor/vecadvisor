@@ -61,6 +61,23 @@ def test_native_topk_c_abi_matches_expected_distances(native_library_path: Path)
     assert inner_product.indices.tolist() == [1, 0]
     assert inner_product.distances.tolist() == pytest.approx([3.0, 1.0])
 
+    int8_distances = library.compute_many_int8(
+        np.asarray([0, 0], dtype=np.int8),
+        np.asarray([[2, 0], [1, 0], [1, 0], [0, 3], [0, 0]], dtype=np.int8),
+        metric="l2",
+    )
+    assert int8_distances.tolist() == pytest.approx([4.0, 1.0, 1.0, 9.0, 0.0])
+
+    int8_topk = library.topk_int8(
+        np.asarray([0, 0], dtype=np.int8),
+        np.asarray([[2, 0], [1, 0], [1, 0], [0, 3], [0, 0]], dtype=np.int8),
+        k=3,
+        metric="l2",
+    )
+    assert int8_topk.count == 3
+    assert int8_topk.indices.tolist() == [4, 1, 2]
+    assert int8_topk.distances.tolist() == pytest.approx([0.0, 1.0, 1.0])
+
 
 def test_native_info_cli_reports_real_shared_library(native_library_path: Path) -> None:
     result = CliRunner().invoke(app, ["native-info", "--library", str(native_library_path)])

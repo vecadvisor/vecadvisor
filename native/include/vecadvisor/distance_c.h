@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stddef.h>
+#include <stdint.h>
 
 #if defined(_WIN32) && defined(VECADVISOR_NATIVE_BUILDING_DLL)
 #define VECADVISOR_NATIVE_EXPORT __declspec(dllexport)
@@ -61,6 +62,32 @@ VECADVISOR_NATIVE_EXPORT vecadvisor_distance_status vecadvisor_distance_topk(
     vecadvisor_distance_metric metric,
     const float* query,
     const float* corpus,
+    size_t rows,
+    size_t dim,
+    size_t k,
+    size_t* out_indices,
+    float* out_distances,
+    size_t* out_count);
+
+VECADVISOR_NATIVE_EXPORT vecadvisor_distance_status vecadvisor_distance_compute_i8(
+    vecadvisor_distance_metric metric,
+    const int8_t* left,
+    const int8_t* right,
+    size_t dim,
+    float* out);
+
+VECADVISOR_NATIVE_EXPORT vecadvisor_distance_status vecadvisor_distance_compute_many_i8(
+    vecadvisor_distance_metric metric,
+    const int8_t* query,
+    const int8_t* corpus,
+    size_t rows,
+    size_t dim,
+    float* out);
+
+VECADVISOR_NATIVE_EXPORT vecadvisor_distance_status vecadvisor_distance_topk_i8(
+    vecadvisor_distance_metric metric,
+    const int8_t* query,
+    const int8_t* corpus,
     size_t rows,
     size_t dim,
     size_t k,

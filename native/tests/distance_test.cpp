@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <cstdlib>
 #include <iostream>
 #include <vector>
@@ -308,6 +309,176 @@ int main() {
           topk_distances.data(),
           &topk_count) != VECADVISOR_DISTANCE_UNSUPPORTED_METRIC) {
     std::cerr << "C ABI top-k unsupported metric should fail\n";
+    return 1;
+  }
+
+  float c_i8_distance = -1.0F;
+  const std::vector<std::int8_t> i8_left{1, -2, 3, 7};
+  const std::vector<std::int8_t> i8_right{-1, -2, 5, -1};
+  if (vecadvisor_distance_compute_i8(
+          VECADVISOR_DISTANCE_L2_SQUARED,
+          i8_left.data(),
+          i8_right.data(),
+          i8_left.size(),
+          &c_i8_distance) != VECADVISOR_DISTANCE_OK) {
+    std::cerr << "C ABI int8 l2 call failed\n";
+    return 1;
+  }
+  assert_near(c_i8_distance, 72.0F, 1.0e-6F, "C ABI int8 l2");
+
+  if (vecadvisor_distance_compute_i8(
+          VECADVISOR_DISTANCE_INNER_PRODUCT,
+          i8_left.data(),
+          i8_right.data(),
+          i8_left.size(),
+          &c_i8_distance) != VECADVISOR_DISTANCE_OK) {
+    std::cerr << "C ABI int8 ip call failed\n";
+    return 1;
+  }
+  assert_near(c_i8_distance, 11.0F, 1.0e-6F, "C ABI int8 ip");
+
+  const std::vector<std::int8_t> i8_unit_x{1, 0, 0};
+  const std::vector<std::int8_t> i8_unit_y{0, 1, 0};
+  if (vecadvisor_distance_compute_i8(
+          VECADVISOR_DISTANCE_COSINE,
+          i8_unit_x.data(),
+          i8_unit_y.data(),
+          i8_unit_x.size(),
+          &c_i8_distance) != VECADVISOR_DISTANCE_OK) {
+    std::cerr << "C ABI int8 cosine call failed\n";
+    return 1;
+  }
+  assert_near(c_i8_distance, 1.0F, 1.0e-6F, "C ABI int8 cosine");
+
+  std::vector<float> many_i8_out(3);
+  const std::vector<std::int8_t> i8_corpus{
+      -1,
+      -2,
+      5,
+      -1,
+      1,
+      -2,
+      3,
+      7,
+      2,
+      2,
+      2,
+      2,
+  };
+  if (vecadvisor_distance_compute_many_i8(
+          VECADVISOR_DISTANCE_L2_SQUARED,
+          i8_left.data(),
+          i8_corpus.data(),
+          3,
+          i8_left.size(),
+          many_i8_out.data()) != VECADVISOR_DISTANCE_OK) {
+    std::cerr << "C ABI int8 batch l2 call failed\n";
+    return 1;
+  }
+  assert_near(many_i8_out[0], 72.0F, 1.0e-6F, "C ABI int8 batch l2 row 0");
+  assert_near(many_i8_out[1], 0.0F, 1.0e-6F, "C ABI int8 batch l2 row 1");
+  assert_near(many_i8_out[2], 43.0F, 1.0e-6F, "C ABI int8 batch l2 row 2");
+
+  const std::vector<std::int8_t> i8_topk_query{0, 0};
+  const std::vector<std::int8_t> i8_topk_corpus{
+      2,
+      0,
+      1,
+      0,
+      1,
+      0,
+      0,
+      3,
+      0,
+      0,
+  };
+  if (vecadvisor_distance_topk_i8(
+          VECADVISOR_DISTANCE_L2_SQUARED,
+          i8_topk_query.data(),
+          i8_topk_corpus.data(),
+          5,
+          2,
+          3,
+          topk_indices.data(),
+          topk_distances.data(),
+          &topk_count) != VECADVISOR_DISTANCE_OK) {
+    std::cerr << "C ABI int8 top-k l2 call failed\n";
+    return 1;
+  }
+  assert_equal_size(topk_count, 3, "C ABI int8 top-k l2 count");
+  assert_equal_size(topk_indices[0], 4, "C ABI int8 top-k l2 index 0");
+  assert_equal_size(topk_indices[1], 1, "C ABI int8 top-k l2 index 1");
+  assert_equal_size(topk_indices[2], 2, "C ABI int8 top-k l2 index 2");
+  assert_near(topk_distances[0], 0.0F, 1.0e-6F, "C ABI int8 top-k l2 distance 0");
+  assert_near(topk_distances[1], 1.0F, 1.0e-6F, "C ABI int8 top-k l2 distance 1");
+  assert_near(topk_distances[2], 1.0F, 1.0e-6F, "C ABI int8 top-k l2 distance 2");
+
+  const std::vector<std::int8_t> i8_ip_query{1, 0};
+  const std::vector<std::int8_t> i8_ip_corpus{
+      1,
+      0,
+      3,
+      0,
+      3,
+      0,
+      -1,
+      0,
+  };
+  if (vecadvisor_distance_topk_i8(
+          VECADVISOR_DISTANCE_INNER_PRODUCT,
+          i8_ip_query.data(),
+          i8_ip_corpus.data(),
+          4,
+          2,
+          2,
+          topk_indices.data(),
+          topk_distances.data(),
+          &topk_count) != VECADVISOR_DISTANCE_OK) {
+    std::cerr << "C ABI int8 top-k ip call failed\n";
+    return 1;
+  }
+  assert_equal_size(topk_count, 2, "C ABI int8 top-k ip count");
+  assert_equal_size(topk_indices[0], 1, "C ABI int8 top-k ip index 0");
+  assert_equal_size(topk_indices[1], 2, "C ABI int8 top-k ip index 1");
+  assert_near(topk_distances[0], 3.0F, 1.0e-6F, "C ABI int8 top-k ip distance 0");
+  assert_near(topk_distances[1], 3.0F, 1.0e-6F, "C ABI int8 top-k ip distance 1");
+
+  if (vecadvisor_distance_topk_i8(
+          VECADVISOR_DISTANCE_L2_SQUARED,
+          i8_topk_query.data(),
+          i8_topk_corpus.data(),
+          5,
+          2,
+          9,
+          topk_indices.data(),
+          topk_distances.data(),
+          &topk_count) != VECADVISOR_DISTANCE_OK) {
+    std::cerr << "C ABI int8 top-k k>rows call failed\n";
+    return 1;
+  }
+  assert_equal_size(topk_count, 5, "C ABI int8 top-k k>rows count");
+
+  if (vecadvisor_distance_compute_i8(
+          static_cast<vecadvisor_distance_metric>(999),
+          i8_left.data(),
+          i8_right.data(),
+          i8_left.size(),
+          &c_i8_distance) != VECADVISOR_DISTANCE_UNSUPPORTED_METRIC) {
+    std::cerr << "C ABI int8 unsupported metric should fail\n";
+    return 1;
+  }
+
+  if (vecadvisor_distance_topk_i8(
+          VECADVISOR_DISTANCE_L2_SQUARED,
+          nullptr,
+          i8_topk_corpus.data(),
+          5,
+          2,
+          3,
+          topk_indices.data(),
+          topk_distances.data(),
+          &topk_count) != VECADVISOR_DISTANCE_INVALID_ARGUMENT) {
+    std::cerr << "C ABI int8 top-k null pointer should fail\n";
     return 1;
   }
 

@@ -518,7 +518,9 @@ scalar-only fallback build and the optional SimSIMD external baseline:
 [`docs/benchmarks/native-distance-kernels.md`](https://github.com/vecadvisor/vecadvisor/blob/main/docs/benchmarks/native-distance-kernels.md).
 The native C ABI also includes a bounded top-k helper for exact ground-truth
 search over row-major `float32` blocks without materializing an `N x Q`
-distance matrix.
+distance matrix. It also exposes scalar int8 C ABI helpers for
+scalar-quantized vectors: `vecadvisor_distance_compute_i8`,
+`vecadvisor_distance_compute_many_i8`, and `vecadvisor_distance_topk_i8`.
 
 Python benchmark ground-truth can use that helper when
 `VECADVISOR_NATIVE_DISTANCE_LIB` points at the built shared library. Runs record

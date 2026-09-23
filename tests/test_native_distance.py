@@ -103,6 +103,32 @@ def test_native_capabilities_decode_from_c_abi() -> None:
     }
 
 
+def test_native_int8_compute_many_and_topk_decode_from_c_abi() -> None:
+    np = pytest.importorskip("numpy")
+    library = NativeDistanceLibrary(_FakeNativeCAbi(), source="fake-library")  # type: ignore[arg-type]
+
+    query = np.asarray([0, 0], dtype=np.int8)
+    corpus = np.asarray([[2, 0], [1, 0], [1, 0], [0, 3], [0, 0]], dtype=np.int8)
+
+    distances = library.compute_many_int8(query, corpus, metric="l2")
+    topk = library.topk_int8(query, corpus, k=3, metric="l2")
+
+    assert distances.tolist() == pytest.approx([4.0, 1.0, 1.0, 9.0, 0.0])
+    assert topk.count == 3
+    assert topk.indices.tolist() == [4, 1, 2]
+    assert topk.distances.tolist() == pytest.approx([0.0, 1.0, 1.0])
+
+
+def test_native_int8_methods_report_missing_optional_abi() -> None:
+    library = NativeDistanceLibrary(_FakeNativeCAbi(include_int8=False), source="fake-library")  # type: ignore[arg-type]
+
+    with pytest.raises(native_distance.NativeDistanceError, match="int8 compute_many ABI"):
+        library.compute_many_int8([0, 0], [[0, 0]], metric="l2")
+
+    with pytest.raises(native_distance.NativeDistanceError, match="int8 top-k ABI"):
+        library.topk_int8([0, 0], [[0, 0]], k=1, metric="l2")
+
+
 class _FakeCFunction:
     def __init__(self, callback: object) -> None:
         self._callback = callback
@@ -114,9 +140,12 @@ class _FakeCFunction:
 
 
 class _FakeNativeCAbi:
-    def __init__(self) -> None:
+    def __init__(self, *, include_int8: bool = True) -> None:
         self.vecadvisor_distance_get_capabilities = _FakeCFunction(self._capabilities)
         self.vecadvisor_distance_topk = _FakeCFunction(lambda *args: 0)
+        if include_int8:
+            self.vecadvisor_distance_compute_many_i8 = _FakeCFunction(self._compute_many_i8)
+            self.vecadvisor_distance_topk_i8 = _FakeCFunction(self._topk_i8)
 
     def _capabilities(self, out_pointer: object) -> int:
         out = ctypes.cast(
@@ -129,3 +158,72 @@ class _FakeNativeCAbi:
         out.inner_product_kernel = b"scalar"
         out.cosine_kernel = b"scalar"
         return 0
+
+    def _compute_many_i8(
+        self,
+        metric: object,
+        query_pointer: object,
+        corpus_pointer: object,
+        rows_value: object,
+        dim_value: object,
+        out_pointer: object,
+    ) -> int:
+        np = pytest.importorskip("numpy")
+        rows = int(rows_value.value)
+        dim = int(dim_value.value)
+        query = np.ctypeslib.as_array(query_pointer, shape=(dim,))
+        corpus = np.ctypeslib.as_array(corpus_pointer, shape=(rows * dim,)).reshape(rows, dim)
+        out = np.ctypeslib.as_array(out_pointer, shape=(rows,))
+        distances = _int8_distances(np, int(metric), query, corpus)
+        out[:] = distances.astype(np.float32)
+        return 0
+
+    def _topk_i8(
+        self,
+        metric: object,
+        query_pointer: object,
+        corpus_pointer: object,
+        rows_value: object,
+        dim_value: object,
+        k_value: object,
+        out_indices_pointer: object,
+        out_distances_pointer: object,
+        out_count_pointer: object,
+    ) -> int:
+        np = pytest.importorskip("numpy")
+        rows = int(rows_value.value)
+        dim = int(dim_value.value)
+        k = int(k_value.value)
+        query = np.ctypeslib.as_array(query_pointer, shape=(dim,))
+        corpus = np.ctypeslib.as_array(corpus_pointer, shape=(rows * dim,)).reshape(rows, dim)
+        distances = _int8_distances(np, int(metric), query, corpus)
+        order = sorted(
+            range(rows),
+            key=lambda index: (
+                -float(distances[index]) if int(metric) == 2 else float(distances[index]),
+                index,
+            ),
+        )[: min(k, rows)]
+        out_indices = np.ctypeslib.as_array(out_indices_pointer, shape=(k,))
+        out_distances = np.ctypeslib.as_array(out_distances_pointer, shape=(k,))
+        for output_index, row_index in enumerate(order):
+            out_indices[output_index] = row_index
+            out_distances[output_index] = distances[row_index]
+        ctypes.cast(out_count_pointer, ctypes.POINTER(ctypes.c_size_t)).contents.value = len(order)
+        return 0
+
+
+def _int8_distances(np: object, metric: int, query: object, corpus: object) -> object:
+    query_array = np.asarray(query, dtype=np.float32)
+    corpus_array = np.asarray(corpus, dtype=np.float32)
+    if metric == 1:
+        delta = corpus_array - query_array
+        return np.einsum("ij,ij->i", delta, delta, optimize=True)
+    if metric == 2:
+        return corpus_array @ query_array
+    if metric == 3:
+        numerator = corpus_array @ query_array
+        corpus_norm = np.maximum(np.linalg.norm(corpus_array, axis=1), 1e-12)
+        query_norm = max(float(np.linalg.norm(query_array)), 1e-12)
+        return 1.0 - numerator / (corpus_norm * query_norm)
+    raise AssertionError(f"unexpected metric: {metric}")

@@ -283,9 +283,10 @@ python tools/native_distance_compare.py \
 - Prefer reproducible native benchmarks before claiming speedups in README or
   launch material.
 
-## Roadmap
+## Post-Alpha Roadmap
 
-The native layer is not complete yet. The next credibility items are:
+The native foundation is complete for the current public alpha. The next
+credibility items are post-alpha portability and dtype work:
 
 - Package the shared native library in platform wheels once the ABI and CI
   matrix are stable.

@@ -1,5 +1,5 @@
 comment = 'VecAdvisor SQL-callable filtered vector search advisor scaffold'
-default_version = '0.1.0-alpha.5'
+default_version = '0.1.0-alpha.6'
 module_pathname = '$libdir/vecadvisor'
 relocatable = true
 trusted = false

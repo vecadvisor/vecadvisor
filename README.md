@@ -39,8 +39,10 @@ This project models that choice with:
 - Reproducible synthetic benchmark, calibration, validation, crossover, and
   proof reports.
 
-Status: alpha. The Python CLI is useful today for experimentation and design
-validation. It does not modify PostgreSQL's planner.
+Status: public alpha. MVP1 and the MVP2 foundation are complete enough for
+public use, resume discussion, and follow-on systems work. Post-alpha native
+SIMD paths and deeper pgrx parity work are tracked separately. VecAdvisor does
+not modify PostgreSQL's planner.
 
 VecAdvisor is an independent third-party tool. It works with PostgreSQL and
 pgvector, but it is not affiliated with the official pgvector project.
@@ -52,6 +54,7 @@ pgvector, but it is not affiliated with the official pgvector project.
 - [Workload collector](https://github.com/vecadvisor/vecadvisor/blob/main/docs/workload-collector.md)
 - [Native kernels](https://github.com/vecadvisor/vecadvisor/blob/main/docs/native-kernels.md)
 - [Rust/pgrx extension](https://github.com/vecadvisor/vecadvisor/blob/main/docs/pgrx-extension.md)
+- [Project status](https://github.com/vecadvisor/vecadvisor/blob/main/PROJECT_STATUS.md)
 - [Benchmark artifacts](https://github.com/vecadvisor/vecadvisor/blob/main/docs/benchmarks/README.md)
 - [SIFT1M scale benchmark recipe](https://github.com/vecadvisor/vecadvisor/blob/main/docs/benchmarks/scale-benchmark.md)
 - [Release checklist](https://github.com/vecadvisor/vecadvisor/blob/main/docs/release.md)
@@ -188,7 +191,7 @@ The current alpha release is also available as wheel and source artifacts on
 GitHub:
 
 ```bash
-python -m pip install https://github.com/vecadvisor/vecadvisor/releases/download/v0.1.0a5/vecadvisor-0.1.0a5-py3-none-any.whl
+python -m pip install https://github.com/vecadvisor/vecadvisor/releases/download/v0.1.0a6/vecadvisor-0.1.0a6-py3-none-any.whl
 ```
 
 The CLI entry point is:
